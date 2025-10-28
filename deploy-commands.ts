@@ -31,7 +31,8 @@ const commandData = commands.map(cmd => cmd.data.toJSON());
 async function deployCommands() {
   const token = process.env.DISCORD_TOKEN;
   const clientId = process.env.DISCORD_CLIENT_ID;
-  const guildId = process.env.DISCORD_GUILD_ID;
+  const guildIdTest = process.env.DISCORD_GUILD_ID_TEST;
+  const guildIdProd = process.env.DISCORD_GUILD_ID_PROD;
 
   if (!token || !clientId) {
     console.error('❌ Missing DISCORD_TOKEN or DISCORD_CLIENT_ID in .env file');
@@ -43,36 +44,32 @@ async function deployCommands() {
   try {
     console.log(`🚀 Started deploying ${commands.length} application (/) commands...`);
 
-    // Check if production mode
-    const isProduction = process.argv.includes('--production');
+    // Smart deployment: use PROD if set, fallback to TEST
+    let guildId: string | undefined;
+    let envName: string;
 
-    if (isProduction) {
-      // Deploy globally (takes ~1 hour to propagate)
-      console.log('📡 Deploying commands globally (this may take up to 1 hour)...');
-
-      await rest.put(
-        Routes.applicationCommands(clientId),
-        { body: commandData }
-      );
-
-      console.log('✅ Successfully deployed commands globally');
+    if (guildIdProd) {
+      guildId = guildIdProd;
+      envName = 'PRODUCTION';
+      console.log('✓ Production server ID found - deploying to PRODUCTION');
+    } else if (guildIdTest) {
+      guildId = guildIdTest;
+      envName = 'TEST';
+      console.log('⚠️  Production server ID not set - deploying to TEST server');
     } else {
-      // Deploy to guild (instant updates)
-      if (!guildId) {
-        console.error('❌ Missing DISCORD_GUILD_ID in .env file for guild deployment');
-        console.log('ℹ️  Use --production flag to deploy globally instead');
-        process.exit(1);
-      }
-
-      console.log(`📡 Deploying commands to guild ${guildId}...`);
-
-      await rest.put(
-        Routes.applicationGuildCommands(clientId, guildId),
-        { body: commandData }
-      );
-
-      console.log('✅ Successfully deployed commands to guild');
+      console.error('❌ Missing both DISCORD_GUILD_ID_PROD and DISCORD_GUILD_ID_TEST in .env file');
+      console.log('ℹ️  Please set at least DISCORD_GUILD_ID_TEST in your .env file');
+      process.exit(1);
     }
+
+    console.log(`📡 Deploying commands to ${envName} server (${guildId})...`);
+
+    await rest.put(
+      Routes.applicationGuildCommands(clientId, guildId),
+      { body: commandData }
+    );
+
+    console.log(`✅ Successfully deployed commands to ${envName} server`)
 
     console.log('\n📋 Deployed Commands:');
     commands.forEach(cmd => {
