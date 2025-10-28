@@ -68,7 +68,7 @@ REDIS_PORT=6379
 REDIS_PASSWORD=
 
 # Bot Configuration
-DEFAULT_LEAGUE=Dawn
+DEFAULT_LEAGUE=Rise of the Abyssal
 ```
 
 4. **Deploy slash commands**

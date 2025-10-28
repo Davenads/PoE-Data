@@ -6,13 +6,11 @@ import {
   formatNumber,
   formatRelativeTime,
   getPriceChangeEmoji,
-  getSentimentEmoji,
-  getVolatilityEmoji
+  getSentimentEmoji
 } from '../utils/formatters';
 import type {
   CurrencyData,
   MoverData,
-  CurrencyAnalytics,
   MarketTrends,
   LeagueInfo
 } from '../models/types';

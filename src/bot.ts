@@ -1,6 +1,5 @@
 import { Client, GatewayIntentBits, Collection, Events } from 'discord.js';
 import { logger } from './utils/logger';
-import { config } from './config/config';
 import type { Command } from './models/command.interface';
 
 // Create Discord client with necessary intents

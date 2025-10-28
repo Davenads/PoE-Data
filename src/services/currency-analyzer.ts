@@ -6,8 +6,7 @@ import type {
   CurrencyData,
   MoverData,
   CurrencyAnalytics,
-  MarketTrends,
-  PriceHistoryEntry
+  MarketTrends
 } from '../models/types';
 
 /**

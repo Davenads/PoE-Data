@@ -5,12 +5,10 @@ import { config } from '../config/config';
 import { rateLimiter } from './rate-limiter';
 import { redisStore } from './redis-store';
 import { API_HEADERS, CURRENCY_KEYWORDS, PUPPETEER_CONFIG } from '../config/constants';
-import { parsePriceString } from '../utils/formatters';
 import type {
   CurrencyData,
   CurrencyOverviewResponse,
-  ScrapedCurrencyData,
-  DataFetchError
+  ScrapedCurrencyData
 } from '../models/types';
 
 /**
@@ -124,7 +122,7 @@ export class PoeNinjaClient {
         });
 
         // Wait for React to render
-        await page.waitForTimeout(PUPPETEER_CONFIG.NETWORK_IDLE_TIMEOUT);
+        await new Promise(resolve => setTimeout(resolve, PUPPETEER_CONFIG.NETWORK_IDLE_TIMEOUT));
 
         // Extract currency data from table
         const currencies = await page.evaluate((keywords: string[]) => {

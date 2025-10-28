@@ -1,15 +1,17 @@
 import {
   SlashCommandBuilder,
-  CommandInteraction,
   AutocompleteInteraction,
-  ChatInputCommandInteraction
+  ChatInputCommandInteraction,
+  Collection,
+  SlashCommandSubcommandsOnlyBuilder,
+  SlashCommandOptionsOnlyBuilder
 } from 'discord.js';
 
 /**
  * Command interface for slash commands
  */
 export interface Command {
-  data: SlashCommandBuilder;
+  data: SlashCommandBuilder | SlashCommandSubcommandsOnlyBuilder | SlashCommandOptionsOnlyBuilder;
   execute: (interaction: ChatInputCommandInteraction) => Promise<void>;
   autocomplete?: (interaction: AutocompleteInteraction) => Promise<void>;
   cooldown?: number; // Cooldown in seconds

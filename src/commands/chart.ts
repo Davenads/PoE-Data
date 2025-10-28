@@ -61,17 +61,17 @@ const command: Command = {
 
       league = normalizeLeagueName(league);
 
-      // TODO: Implement chart generation
-      // This requires chart.js and canvas setup
-      // For now, return a placeholder message
-
+      // Chart generation requires canvas package (platform-specific)
+      // Using external chart service or implementing later
       await interaction.editReply({
         embeds: [embedBuilder.createErrorEmbed(
           'Feature Coming Soon',
-          `Chart generation for **${currency}** (${timeframe}) is currently under development.\n\n` +
-          `For now, you can use:\n` +
-          `• \`/price ${currency}\` - View current price\n` +
-          `• \`/trends ${league}\` - View market overview`
+          `📊 Chart generation for **${currency}** (${timeframe}) will be implemented in Phase 3.\n\n` +
+          `**Currently Available:**\n` +
+          `• \`/price ${currency}\` - Current price & 24h change\n` +
+          `• \`/movers\` - Biggest price movements\n` +
+          `• \`/trends ${league}\` - Market overview\n\n` +
+          `Price history data is being collected in the background!`
         )]
       });
 

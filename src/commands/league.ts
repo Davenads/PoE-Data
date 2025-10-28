@@ -4,7 +4,7 @@ import { redisStore } from '../services/redis-store';
 import { poeNinjaClient } from '../services/poe-ninja-client';
 import { logger } from '../utils/logger';
 import { COMMAND_COOLDOWNS, ERROR_MESSAGES } from '../config/constants';
-import { isValidLeague, normalizeLeagueName } from '../utils/validators';
+import { isValidLeague } from '../utils/validators';
 import type { Command } from '../models/command.interface';
 import type { LeagueInfo } from '../models/types';
 

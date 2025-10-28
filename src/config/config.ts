@@ -1,5 +1,4 @@
 import dotenv from 'dotenv';
-import path from 'path';
 
 // Load environment variables
 dotenv.config();
@@ -62,7 +61,7 @@ export const config: Config = {
     password: process.env.REDIS_PASSWORD
   },
   bot: {
-    defaultLeague: process.env.DEFAULT_LEAGUE || 'Dawn',
+    defaultLeague: process.env.DEFAULT_LEAGUE || 'Rise of the Abyssal',
     updateIntervalMinutes: parseInt(process.env.UPDATE_INTERVAL_MINUTES || '5', 10),
     enableAutocomplete: process.env.ENABLE_AUTOCOMPLETE !== 'false',
     chartCacheDuration: parseInt(process.env.CHART_CACHE_DURATION || '600', 10)

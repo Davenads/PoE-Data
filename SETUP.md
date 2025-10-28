@@ -42,7 +42,7 @@ REDIS_HOST=localhost
 REDIS_PORT=6379
 
 # Bot Settings
-DEFAULT_LEAGUE=Dawn
+DEFAULT_LEAGUE=Rise of the Abyssal
 ```
 
 ## Step 5: Start Redis
@@ -159,7 +159,7 @@ docker-compose down
 
 ## Next Steps
 
-- Set your server's default league: `/league set Dawn`
+- Set your server's default league: `/league set Rise of the Abyssal`
 - Explore commands: `/help`
 - Check market movers: `/movers`
 - View trends: `/trends`

@@ -2,7 +2,6 @@ import Redis from 'ioredis';
 import { config } from '../config/config';
 import { logger } from '../utils/logger';
 import { CACHE_TTL } from '../config/constants';
-import type { CacheEntry } from '../models/types';
 
 /**
  * Redis data store for caching and persistence
