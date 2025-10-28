@@ -6,7 +6,9 @@
       "Bash(del nul)",
       "Bash(cmd /c \"del /f /q nul\")",
       "Bash(git add:*)",
-      "Bash(pkill:*)"
+      "Bash(pkill:*)",
+      "Bash(docker-compose up:*)",
+      "Bash(npm run build:*)"
     ],
     "deny": [],
     "ask": []

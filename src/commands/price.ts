@@ -3,7 +3,7 @@ import { poeNinjaClient } from '../services/poe-ninja-client';
 import { embedBuilder } from '../services/embed-builder';
 import { config } from '../config/config';
 import { logger } from '../utils/logger';
-import { COMMAND_COOLDOWNS, ERROR_MESSAGES } from '../config/constants';
+import { COMMAND_COOLDOWNS, ERROR_MESSAGES, POE2_CURRENCIES } from '../config/constants';
 import { isValidLeague, normalizeLeagueName, sanitizeInput } from '../utils/validators';
 import type { Command } from '../models/command.interface';
 
@@ -80,14 +80,10 @@ const command: Command = {
       const focusedOption = interaction.options.getFocused(true);
 
       if (focusedOption.name === 'currency') {
-        const league = interaction.options.getString('league') || config.bot.defaultLeague;
         const query = focusedOption.value.toLowerCase();
 
-        // Get currency names
-        const currencyNames = await poeNinjaClient.getCurrencyNames(league);
-
-        // Filter and return matches
-        const filtered = currencyNames
+        // Use hardcoded currency list for fast autocomplete (no API call needed)
+        const filtered = POE2_CURRENCIES
           .filter(name => name.toLowerCase().includes(query))
           .slice(0, 25); // Discord limit
 

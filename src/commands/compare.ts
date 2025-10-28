@@ -3,7 +3,7 @@ import { poeNinjaClient } from '../services/poe-ninja-client';
 import { embedBuilder } from '../services/embed-builder';
 import { config } from '../config/config';
 import { logger } from '../utils/logger';
-import { COMMAND_COOLDOWNS, ERROR_MESSAGES } from '../config/constants';
+import { COMMAND_COOLDOWNS, ERROR_MESSAGES, POE2_CURRENCIES } from '../config/constants';
 import { isValidLeague, normalizeLeagueName, sanitizeInput } from '../utils/validators';
 import type { Command } from '../models/command.interface';
 
@@ -77,13 +77,12 @@ const command: Command = {
   async autocomplete(interaction: AutocompleteInteraction) {
     try {
       const focusedOption = interaction.options.getFocused(true);
-      const league = interaction.options.getString('league') || config.bot.defaultLeague;
 
       if (focusedOption.name === 'currency1' || focusedOption.name === 'currency2') {
         const query = focusedOption.value.toLowerCase();
-        const currencyNames = await poeNinjaClient.getCurrencyNames(league);
 
-        const filtered = currencyNames
+        // Use hardcoded currency list for fast autocomplete (no API call needed)
+        const filtered = POE2_CURRENCIES
           .filter(name => name.toLowerCase().includes(query))
           .slice(0, 25);
 

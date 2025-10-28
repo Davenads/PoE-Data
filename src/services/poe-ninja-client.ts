@@ -4,6 +4,7 @@ import { logger } from '../utils/logger';
 import { config } from '../config/config';
 import { rateLimiter } from './rate-limiter';
 import { redisStore } from './redis-store';
+import { getLeagueUrlSlug } from '../utils/validators';
 import { API_HEADERS, CURRENCY_KEYWORDS, PUPPETEER_CONFIG } from '../config/constants';
 import type {
   CurrencyData,
@@ -112,17 +113,27 @@ export class PoeNinjaClient {
         await page.setViewport({ width: 1920, height: 1080 });
         await page.setUserAgent(API_HEADERS['User-Agent']);
 
-        // Navigate to poe.ninja economy page
-        const url = `${config.poeNinja.webUrl}/poe2/economy/${league}/currency`;
-        logger.info(`Navigating to: ${url}`);
+        // Convert league name to URL slug
+        const leagueSlug = getLeagueUrlSlug(league);
+        const url = `${config.poeNinja.webUrl}/poe2/economy/${leagueSlug}/currency`;
+        logger.info(`[Puppeteer] Navigating to: ${url}`);
+        logger.info(`[Puppeteer] League display name: "${league}" -> URL slug: "${leagueSlug}"`);
 
-        await page.goto(url, {
-          waitUntil: 'networkidle0',
-          timeout: PUPPETEER_CONFIG.NAVIGATION_TIMEOUT
-        });
+        try {
+          await page.goto(url, {
+            waitUntil: 'networkidle0',
+            timeout: PUPPETEER_CONFIG.NAVIGATION_TIMEOUT
+          });
+          logger.info(`[Puppeteer] Successfully loaded page`);
+        } catch (navError: any) {
+          logger.error(`[Puppeteer] Navigation failed: ${navError.message}`);
+          logger.error(`[Puppeteer] URL attempted: ${url}`);
+          throw navError;
+        }
 
         // Wait for React to render
         await new Promise(resolve => setTimeout(resolve, PUPPETEER_CONFIG.NETWORK_IDLE_TIMEOUT));
+        logger.info(`[Puppeteer] Finished waiting for React render, extracting data...`);
 
         // Extract currency data from table
         const currencies = await page.evaluate((keywords: string[]) => {
@@ -194,6 +205,12 @@ export class PoeNinjaClient {
         }, CURRENCY_KEYWORDS as unknown as string[]);
 
         logger.info(`Scraped ${currencies.length} currencies`);
+
+        // Debug: Log all scraped currency names
+        if (currencies.length > 0) {
+          logger.info(`[Puppeteer] Scraped currency names: ${currencies.map(c => c.currencyTypeName).join(', ')}`);
+        }
+
         return currencies;
 
       } finally {
@@ -266,11 +283,18 @@ export class PoeNinjaClient {
 
     // Fetch all currencies and find the one we need
     const currencies = await this.fetchCurrencyData(league);
+
+    logger.info(`Searching for "${currencyName}" among ${currencies.length} currencies`);
+
     const currency = currencies.find(
       c => c.currencyTypeName.toLowerCase() === currencyName.toLowerCase()
     );
 
-    if (currency) {
+    if (!currency) {
+      logger.warn(`Currency "${currencyName}" not found. Available currencies: ${currencies.map(c => c.currencyTypeName).slice(0, 10).join(', ')}...`);
+    } else {
+      logger.info(`Found currency: ${currency.currencyTypeName}`);
+
       // Store in cache
       await redisStore.storeCurrencyData(league, currencyName, currency);
 

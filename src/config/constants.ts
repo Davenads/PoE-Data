@@ -7,6 +7,114 @@ export const LEAGUES = {
 export type POE2League = typeof LEAGUES.POE2[number];
 export type POE1League = typeof LEAGUES.POE1[number];
 
+// League name to URL slug mapping
+// poe.ninja uses lowercase URL slugs, and some leagues have different display vs URL names
+export const LEAGUE_URL_SLUGS: Record<string, string> = {
+  // PoE2 leagues
+  'Dawn': 'dawn',
+  'Standard': 'standard',
+  'Rise of the Abyssal': 'abyss',
+  'abyss': 'abyss',
+
+  // PoE1 leagues (for future use)
+  'Affliction': 'affliction',
+  'Hardcore': 'hardcore'
+} as const;
+
+// Hardcoded PoE2 currency list for fast autocomplete
+// Organized by category for easy maintenance
+export const POE2_CURRENCIES = [
+  // Premium/Rare Currency
+  'Mirror of Kalandra',
+  'Divine Orb',
+  'Exalted Orb',
+
+  // Common Currency
+  'Chaos Orb',
+  'Regal Orb',
+  'Orb of Alchemy',
+  'Orb of Scouring',
+  'Orb of Annulment',
+  'Orb of Regret',
+  'Blessed Orb',
+  'Vaal Orb',
+
+  // Basic Currency
+  'Orb of Transmutation',
+  'Orb of Augmentation',
+  'Orb of Alteration',
+  'Scroll of Wisdom',
+  'Portal Scroll',
+
+  // Quality Currency
+  'Armourer\'s Scrap',
+  'Blacksmith\'s Whetstone',
+  'Gemcutter\'s Prism',
+  'Glassblower\'s Bauble',
+
+  // Socket Currency
+  'Chromatic Orb',
+  'Jeweller\'s Orb',
+  'Orb of Fusing',
+
+  // Shards
+  'Transmutation Shard',
+  'Alteration Shard',
+  'Alchemy Shard',
+  'Regal Shard',
+  'Chaos Shard',
+  'Exalted Shard',
+  'Divine Shard',
+  'Mirror Shard',
+
+  // Special Currency
+  'Orb of Unmaking',
+  'Orb of Horizons',
+  'Orb of Chance',
+  'Engineer\'s Orb',
+  'Harbinger\'s Orb',
+
+  // Essences (if applicable in PoE2)
+  'Essence of Greed',
+  'Essence of Envy',
+  'Essence of Wrath',
+  'Essence of Contempt',
+  'Essence of Hatred',
+  'Essence of Scorn',
+  'Essence of Sorrow',
+  'Essence of Rage',
+  'Essence of Suffering',
+  'Essence of Anguish',
+  'Essence of Loathing',
+  'Essence of Zeal',
+  'Essence of Misery',
+  'Essence of Dread',
+  'Essence of Torment',
+  'Essence of Fear',
+
+  // Catalyst (if applicable)
+  'Abrasive Catalyst',
+  'Accelerating Catalyst',
+  'Fertile Catalyst',
+  'Imbued Catalyst',
+  'Intrinsic Catalyst',
+  'Noxious Catalyst',
+  'Prismatic Catalyst',
+  'Tempering Catalyst',
+  'Turbulent Catalyst',
+  'Unstable Catalyst',
+
+  // Other
+  'Orb of Dominance',
+  'Sacred Orb',
+  'Veiled Orb',
+  'Tainted Chromatic Orb',
+  'Tainted Orb of Fusing',
+  'Tainted Jeweller\'s Orb'
+] as const;
+
+export type POE2Currency = typeof POE2_CURRENCIES[number];
+
 // Cache TTL values (in seconds)
 export const CACHE_TTL = {
   CURRENCY_DATA: 300, // 5 minutes

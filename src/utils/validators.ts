@@ -1,4 +1,4 @@
-import { LEAGUES, TIMEFRAMES, PAGINATION } from '../config/constants';
+import { LEAGUES, TIMEFRAMES, PAGINATION, LEAGUE_URL_SLUGS } from '../config/constants';
 import type { Timeframe } from '../config/constants';
 
 /**
@@ -16,6 +16,26 @@ export function normalizeLeagueName(league: string): string {
   const allLeagues = [...LEAGUES.POE2, ...LEAGUES.POE1];
   const found = allLeagues.find(l => l.toLowerCase() === league.toLowerCase());
   return found || league;
+}
+
+/**
+ * Convert league name to URL slug for poe.ninja
+ * @param league - Display name of the league
+ * @returns URL-safe slug for the league
+ */
+export function getLeagueUrlSlug(league: string): string {
+  // First normalize the league name
+  const normalized = normalizeLeagueName(league);
+
+  // Look up in the mapping
+  const slug = LEAGUE_URL_SLUGS[normalized];
+
+  if (slug) {
+    return slug;
+  }
+
+  // Fallback: convert to lowercase and replace spaces with dashes
+  return normalized.toLowerCase().replace(/\s+/g, '-');
 }
 
 /**
