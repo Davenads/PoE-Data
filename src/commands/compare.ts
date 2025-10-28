@@ -63,6 +63,11 @@ const command: Command = {
         return;
       }
 
+      // Debug logging for exchange rate calculation
+      logger.info(`[Compare] ${data1.currencyTypeName}: ${data1.chaosEquivalent}c vs ${data2.currencyTypeName}: ${data2.chaosEquivalent}c`);
+      const ratio = data1.chaosEquivalent / data2.chaosEquivalent;
+      logger.info(`[Compare] Exchange rate: 1 ${data1.currencyTypeName} = ${ratio.toFixed(2)} ${data2.currencyTypeName}`);
+
       const embed = embedBuilder.createComparisonEmbed(data1, data2, league);
       await interaction.editReply({ embeds: [embed] });
 

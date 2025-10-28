@@ -100,6 +100,8 @@ start.bat
 |--------|---------|
 | `dev.bat` | Start bot in development mode (auto-reload, debug logs) |
 | `start.bat` | Build and start bot in production mode |
+| `clean-start.bat` | Kill old instances and start fresh (recommended) |
+| `kill-bots.bat` | Stop all Node.js processes |
 | `deploy-commands.bat` | Register slash commands with Discord |
 | `check-redis.bat` | Verify Redis connection and configuration |
 
@@ -240,6 +242,23 @@ Verify password in `.env` matches Redis config:
 wsl bash -c "redis-cli -a 'YOUR_PASSWORD' --no-auth-warning ping"
 # Should return: PONG
 ```
+
+### "Unknown interaction" errors
+
+**Problem:** Commands time out with "Unknown interaction" error.
+
+**Solution:**
+Multiple bot instances are running. Kill all and restart:
+```bash
+kill-bots.bat
+# Then start fresh with:
+clean-start.bat
+```
+
+**Prevention:**
+- Always use **Ctrl+C** to stop the bot properly
+- Use `clean-start.bat` instead of `dev.bat` if you're unsure
+- Check Task Manager for zombie `node.exe` processes
 
 ## Features Roadmap
 

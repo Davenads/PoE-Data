@@ -9,8 +9,14 @@ const command: Command = {
     .setDescription('Show help information and available commands'),
 
   async execute(interaction: ChatInputCommandInteraction) {
-    const embed = embedBuilder.createHelpEmbed();
-    await interaction.reply({ embeds: [embed] });
+    try {
+      const embed = embedBuilder.createHelpEmbed();
+      await interaction.reply({ embeds: [embed] });
+    } catch (error) {
+      // If reply fails, log but don't throw (interaction might have expired)
+      console.error('Help command reply failed:', error);
+      throw error; // Re-throw to be caught by handler
+    }
   },
 
   cooldown: COMMAND_COOLDOWNS.help

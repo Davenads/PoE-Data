@@ -1,4 +1,4 @@
-import { Interaction, ChatInputCommandInteraction } from 'discord.js';
+import { Interaction, ChatInputCommandInteraction, MessageFlags } from 'discord.js';
 import { client } from '../bot';
 import { logger } from '../utils/logger';
 import { embedBuilder } from '../services/embed-builder';
@@ -53,7 +53,7 @@ async function handleSlashCommand(interaction: ChatInputCommandInteraction): Pro
             'Cooldown Active',
             `Please wait ${timeLeft.toFixed(1)}s before using this command again.`
           )],
-          ephemeral: true
+          flags: MessageFlags.Ephemeral
         });
         return;
       }
@@ -71,16 +71,26 @@ async function handleSlashCommand(interaction: ChatInputCommandInteraction): Pro
   } catch (error) {
     logger.error(`Error executing command ${interaction.commandName}:`, error);
 
-    const errorEmbed = embedBuilder.createErrorEmbed(
-      'Command Error',
-      error instanceof Error ? error.message : 'An unknown error occurred'
-    );
+    // Only try to respond if the interaction hasn't expired
+    try {
+      const errorEmbed = embedBuilder.createErrorEmbed(
+        'Command Error',
+        error instanceof Error ? error.message : 'An unknown error occurred'
+      );
 
-    // Send error response
-    if (interaction.deferred || interaction.replied) {
-      await interaction.editReply({ embeds: [errorEmbed] });
-    } else {
-      await interaction.reply({ embeds: [errorEmbed], ephemeral: true });
+      // Send error response only if we can
+      if (interaction.deferred || interaction.replied) {
+        await interaction.editReply({ embeds: [errorEmbed] }).catch(() => {
+          logger.warn('Could not edit reply - interaction likely expired');
+        });
+      } else {
+        await interaction.reply({ embeds: [errorEmbed], flags: MessageFlags.Ephemeral }).catch(() => {
+          logger.warn('Could not send error reply - interaction likely expired');
+        });
+      }
+    } catch (replyError) {
+      // Silently fail - interaction is already invalid
+      logger.debug('Failed to send error response - interaction expired');
     }
   }
 }

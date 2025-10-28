@@ -23,7 +23,13 @@
       "Bash(cmd /c \"del /f /q start.bat stop.bat restart.bat rebuild.bat logs.bat status.bat 2>nul\")",
       "Bash(cmd /c \"ren dev-local.bat dev.bat && ren start-local.bat start.bat\")",
       "Bash(cmd /c \"ren deploy-commands-local.bat deploy-commands.bat\")",
-      "Bash(dir:*)"
+      "Bash(dir:*)",
+      "Bash(tasklist:*)",
+      "Bash(findstr:*)",
+      "Bash(taskkill:*)",
+      "Bash(cmd /c \"taskkill /F /IM node.exe\")",
+      "Bash(curl:*)",
+      "Bash(wsl redis-cli:*)"
     ],
     "deny": [],
     "ask": []

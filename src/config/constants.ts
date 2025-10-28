@@ -116,13 +116,14 @@ export const POE2_CURRENCIES = [
 export type POE2Currency = typeof POE2_CURRENCIES[number];
 
 // Cache TTL values (in seconds)
+// Note: GGG provides currency data in hourly chunks (max 1 hour delay)
 export const CACHE_TTL = {
-  CURRENCY_DATA: 300, // 5 minutes
-  DISCORD_EMBED: 120, // 2 minutes
-  CURRENCY_LIST: 300, // 5 minutes
-  MOVERS: 180, // 3 minutes
-  CHART: 600, // 10 minutes
-  PRICE_HISTORY: 2592000 // 30 days
+  CURRENCY_DATA: 3600,    // 1 hour (aligned with GGG update frequency)
+  DISCORD_EMBED: 600,     // 10 minutes (UI freshness)
+  CURRENCY_LIST: 3600,    // 1 hour (currencies rarely change)
+  MOVERS: 1800,          // 30 minutes (expensive calculation)
+  CHART: 1800,           // 30 minutes (expensive generation)
+  PRICE_HISTORY: 2592000 // 30 days (Redis Streams retention)
 } as const;
 
 // Currency type keywords for scraping

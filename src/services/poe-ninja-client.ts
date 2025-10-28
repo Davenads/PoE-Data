@@ -109,6 +109,13 @@ export class PoeNinjaClient {
 
         page = await this.browser.newPage();
 
+        // Capture console logs from the page
+        page.on('console', (msg) => {
+          if (msg.text().includes('[Puppeteer Debug]')) {
+            logger.info(msg.text());
+          }
+        });
+
         // Set viewport and user agent
         await page.setViewport({ width: 1920, height: 1080 });
         await page.setUserAgent(API_HEADERS['User-Agent']);
@@ -140,36 +147,49 @@ export class PoeNinjaClient {
           const results: ScrapedCurrencyData[] = [];
           const rows = document.querySelectorAll('table tbody tr');
 
-          rows.forEach(row => {
+          rows.forEach((row, rowIndex) => {
             try {
               const cells = row.querySelectorAll('td');
               if (cells.length < 2) return;
 
-              // Get currency name (usually first or second cell)
+              // Debug: Log all cell contents for first few rows
+              if (rowIndex < 3) {
+                const cellContents = Array.from(cells).map((cell, i) => `[${i}]: "${cell.textContent?.trim()}"`);
+                console.log(`[Puppeteer Debug] Row ${rowIndex} cells:`, cellContents.join(' | '));
+              }
+
               let currencyName = '';
+              let nameColumnIndex = -1;
               let chaosValue = 0;
               let volumePerHour = 0;
               let changePercent = 0;
 
-              // Try to find currency name
+              // Find currency name and remember which column it's in
               for (let i = 0; i < Math.min(cells.length, 3); i++) {
                 const text = cells[i].textContent?.trim() || '';
                 const hasKeyword = keywords.some(kw => text.includes(kw));
 
                 if (hasKeyword && !currencyName) {
-                  currencyName = text;
+                  // Remove "wiki" suffix if present
+                  currencyName = text.replace(/wiki$/i, '').trim();
+                  nameColumnIndex = i;
                   break;
                 }
               }
 
               if (!currencyName) return;
 
-              // Parse chaos value
-              for (let i = 0; i < cells.length; i++) {
+              // Parse chaos value - look AFTER the name column, specifically for price pattern
+              // Price is typically in the next 1-2 columns after the name
+              for (let i = nameColumnIndex + 1; i < Math.min(nameColumnIndex + 4, cells.length); i++) {
                 const text = cells[i].textContent?.trim() || '';
 
-                // Look for chaos value (number with possible k/m/b suffix)
-                const priceMatch = text.match(/([\d.]+)([kmb])?/i);
+                // Skip empty cells and cells with % (those are changes, not prices)
+                if (!text || text.includes('%')) continue;
+
+                // Look for chaos value pattern (number with optional decimal and k/m/b suffix)
+                // Must match the pattern: digits with optional decimal, followed by optional multiplier
+                const priceMatch = text.match(/^([\d.]+)([kmb])?$/i);
                 if (priceMatch && !chaosValue) {
                   let value = parseFloat(priceMatch[1]);
                   const suffix = priceMatch[2]?.toLowerCase();
@@ -179,9 +199,16 @@ export class PoeNinjaClient {
                   if (suffix === 'b') value *= 1000000000;
 
                   chaosValue = value;
+                  if (rowIndex < 3) {
+                    console.log(`[Puppeteer Debug] Found price in column ${i}: ${text} = ${value}c`);
+                  }
+                  break; // Found the price, stop looking
                 }
+              }
 
-                // Look for percentage change
+              // Look for percentage change
+              for (let i = 0; i < cells.length; i++) {
+                const text = cells[i].textContent?.trim() || '';
                 const changeMatch = text.match(/([+-]?[\d.]+)%/);
                 if (changeMatch && !changePercent) {
                   changePercent = parseFloat(changeMatch[1]);

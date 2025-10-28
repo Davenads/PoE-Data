@@ -4,6 +4,7 @@
   "ignore": ["src/**/*.test.ts", "node_modules"],
   "exec": "ts-node src/index.ts",
   "restartable": "rs",
+  "delay": 2000,
   "env": {
     "NODE_ENV": "development"
   }

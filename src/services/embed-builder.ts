@@ -62,10 +62,28 @@ export class EmbedBuilderService {
     currency2: CurrencyData,
     league: string
   ): EmbedBuilder {
-    const ratio = currency1.chaosEquivalent / currency2.chaosEquivalent;
+    const ratio1to2 = currency1.chaosEquivalent / currency2.chaosEquivalent;
+    const ratio2to1 = currency2.chaosEquivalent / currency1.chaosEquivalent;
+
     const betterPerformer = currency1.paySparkLine.totalChange > currency2.paySparkLine.totalChange
       ? currency1.currencyTypeName
       : currency2.currencyTypeName;
+
+    // Format exchange rates based on which makes more sense to display
+    let exchangeRateText: string;
+    if (ratio1to2 >= 1) {
+      // If ratio is >= 1, show currency1 -> currency2
+      exchangeRateText = `1 ${currency1.currencyTypeName} = **${ratio1to2.toFixed(2)}** ${currency2.currencyTypeName}`;
+      if (ratio2to1 >= 0.01) {
+        exchangeRateText += `\n1 ${currency2.currencyTypeName} = **${ratio2to1.toFixed(2)}** ${currency1.currencyTypeName}`;
+      }
+    } else {
+      // If ratio is < 1, flip it for better readability
+      exchangeRateText = `1 ${currency2.currencyTypeName} = **${ratio2to1.toFixed(2)}** ${currency1.currencyTypeName}`;
+      if (ratio1to2 >= 0.01) {
+        exchangeRateText += `\n1 ${currency1.currencyTypeName} = **${ratio1to2.toFixed(2)}** ${currency2.currencyTypeName}`;
+      }
+    }
 
     const embed = new EmbedBuilder()
       .setTitle(`⚖️ Currency Comparison`)
@@ -89,7 +107,7 @@ export class EmbedBuilderService {
         },
         {
           name: '💱 Exchange Rate',
-          value: `1 ${currency1.currencyTypeName} = ${ratio.toFixed(2)} ${currency2.currencyTypeName}`,
+          value: exchangeRateText,
           inline: false
         },
         {
