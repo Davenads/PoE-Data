@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: poe2-bot-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes
+    restart: unless-stopped
+    networks:
+      - poe2-bot-network
+
+  bot:
+    build: .
+    container_name: poe2-discord-bot
+    depends_on:
+      - redis
+    environment:
+      - DISCORD_TOKEN=${DISCORD_TOKEN}
+      - DISCORD_CLIENT_ID=${DISCORD_CLIENT_ID}
+      - DISCORD_GUILD_ID=${DISCORD_GUILD_ID}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - DEFAULT_LEAGUE=${DEFAULT_LEAGUE:-Dawn}
+      - NODE_ENV=${NODE_ENV:-production}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+    volumes:
+      - ./logs:/app/logs
+    restart: unless-stopped
+    networks:
+      - poe2-bot-network
+
+volumes:
+  redis-data:
+    driver: local
+
+networks:
+  poe2-bot-network:
+    driver: bridge

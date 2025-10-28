@@ -1,12 +1,48 @@
 {
-  "name": "poe-data",
+  "name": "poe2-discord-bot",
   "version": "1.0.0",
-  "main": "index.js",
+  "description": "Discord bot for Path of Exile 2 economy information powered by poe.ninja",
+  "main": "dist/index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "nodemon --exec ts-node src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "deploy-commands": "ts-node deploy-commands.ts",
+    "deploy-commands:prod": "ts-node deploy-commands.ts --production",
+    "lint": "eslint src/**/*.ts",
+    "test": "jest"
   },
-  "keywords": [],
+  "keywords": [
+    "discord",
+    "bot",
+    "poe2",
+    "path-of-exile",
+    "economy"
+  ],
   "author": "",
-  "license": "ISC",
-  "description": ""
+  "license": "MIT",
+  "dependencies": {
+    "discord.js": "^14.14.1",
+    "ioredis": "^5.3.2",
+    "axios": "^1.6.0",
+    "puppeteer": "^21.6.0",
+    "typescript": "^5.3.3",
+    "dotenv": "^16.3.1",
+    "winston": "^3.11.0",
+    "chart.js": "^4.4.1",
+    "canvas": "^2.11.2",
+    "@types/node": "^20.10.0"
+  },
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^6.15.0",
+    "@typescript-eslint/parser": "^6.15.0",
+    "eslint": "^8.56.0",
+    "jest": "^29.7.0",
+    "nodemon": "^3.0.2",
+    "ts-jest": "^29.1.1",
+    "ts-node": "^10.9.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
 }

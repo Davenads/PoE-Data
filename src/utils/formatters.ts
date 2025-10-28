@@ -1,0 +1,169 @@
+import { PRICE_MULTIPLIERS } from '../config/constants';
+
+/**
+ * Format a price value with appropriate suffix (k, m, b)
+ */
+export function formatPrice(price: number, decimals: number = 2): string {
+  if (price >= PRICE_MULTIPLIERS.b) {
+    return `${(price / PRICE_MULTIPLIERS.b).toFixed(decimals)}b`;
+  }
+  if (price >= PRICE_MULTIPLIERS.m) {
+    return `${(price / PRICE_MULTIPLIERS.m).toFixed(decimals)}m`;
+  }
+  if (price >= PRICE_MULTIPLIERS.k) {
+    return `${(price / PRICE_MULTIPLIERS.k).toFixed(decimals)}k`;
+  }
+  return price.toFixed(decimals);
+}
+
+/**
+ * Format a chaos price with "c" suffix
+ */
+export function formatChaosPrice(price: number, decimals: number = 2): string {
+  return `${formatPrice(price, decimals)}c`;
+}
+
+/**
+ * Format a percentage change with + or - prefix
+ */
+export function formatPercentChange(change: number, decimals: number = 1): string {
+  const sign = change >= 0 ? '+' : '';
+  return `${sign}${change.toFixed(decimals)}%`;
+}
+
+/**
+ * Format a number with commas for thousands
+ */
+export function formatNumber(num: number): string {
+  return num.toLocaleString('en-US');
+}
+
+/**
+ * Parse a price string with k/m/b suffix to number
+ */
+export function parsePriceString(priceStr: string): number {
+  const cleaned = priceStr.toLowerCase().trim();
+
+  const match = cleaned.match(/^([\d.]+)([kmb])?$/);
+  if (!match) {
+    return parseFloat(cleaned) || 0;
+  }
+
+  const [, numStr, suffix] = match;
+  const num = parseFloat(numStr);
+
+  if (!suffix) return num;
+
+  const multiplier = PRICE_MULTIPLIERS[suffix as keyof typeof PRICE_MULTIPLIERS];
+  return num * (multiplier || 1);
+}
+
+/**
+ * Format a timestamp to relative time (e.g., "2 minutes ago")
+ */
+export function formatRelativeTime(timestamp: number | string): string {
+  const now = Date.now();
+  const then = typeof timestamp === 'string' ? new Date(timestamp).getTime() : timestamp;
+  const diff = now - then;
+
+  const seconds = Math.floor(diff / 1000);
+  const minutes = Math.floor(seconds / 60);
+  const hours = Math.floor(minutes / 60);
+  const days = Math.floor(hours / 24);
+
+  if (days > 0) return `${days} day${days > 1 ? 's' : ''} ago`;
+  if (hours > 0) return `${hours} hour${hours > 1 ? 's' : ''} ago`;
+  if (minutes > 0) return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
+  return 'just now';
+}
+
+/**
+ * Format a date to readable string
+ */
+export function formatDate(timestamp: number | string): string {
+  const date = typeof timestamp === 'string' ? new Date(timestamp) : new Date(timestamp);
+  return date.toLocaleString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+}
+
+/**
+ * Truncate text to a specific length with ellipsis
+ */
+export function truncate(text: string, maxLength: number): string {
+  if (text.length <= maxLength) return text;
+  return text.substring(0, maxLength - 3) + '...';
+}
+
+/**
+ * Get emoji for price change direction
+ */
+export function getPriceChangeEmoji(change: number): string {
+  if (change > 10) return '🚀';
+  if (change > 5) return '📈';
+  if (change > 0) return '⬆️';
+  if (change === 0) return '➡️';
+  if (change > -5) return '⬇️';
+  if (change > -10) return '📉';
+  return '💥';
+}
+
+/**
+ * Get emoji for market sentiment
+ */
+export function getSentimentEmoji(sentiment: string): string {
+  switch (sentiment.toLowerCase()) {
+    case 'very_bullish':
+      return '🚀';
+    case 'bullish':
+      return '📈';
+    case 'neutral':
+      return '➡️';
+    case 'bearish':
+      return '📉';
+    case 'very_bearish':
+      return '💥';
+    default:
+      return '❓';
+  }
+}
+
+/**
+ * Get emoji for volatility
+ */
+export function getVolatilityEmoji(volatility: string): string {
+  switch (volatility.toLowerCase()) {
+    case 'high':
+      return '⚡';
+    case 'medium':
+      return '📊';
+    case 'low':
+      return '🔒';
+    default:
+      return '❓';
+  }
+}
+
+/**
+ * Format currency name for display (capitalize properly)
+ */
+export function formatCurrencyName(name: string): string {
+  return name
+    .split(' ')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ');
+}
+
+/**
+ * Create a progress bar string
+ */
+export function createProgressBar(value: number, max: number, length: number = 10): string {
+  const percentage = Math.min(Math.max(value / max, 0), 1);
+  const filled = Math.round(percentage * length);
+  const empty = length - filled;
+  return '█'.repeat(filled) + '░'.repeat(empty);
+}
