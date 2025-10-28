@@ -1,6 +1,6 @@
 import dotenv from 'dotenv';
 
-// Load environment variables
+// Load environment variables from .env
 dotenv.config();
 
 interface Config {

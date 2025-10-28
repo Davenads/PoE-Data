@@ -26,20 +26,23 @@ A Discord bot that provides real-time Path of Exile 2 economy information throug
 | `/chart [currency] [timeframe] [league]` | Generate price chart (coming soon) |
 | `/help` | Show help information |
 
-## Setup
+## Quick Start
 
 ### Prerequisites
 
 - Node.js 18+
-- Redis server
+- Redis on WSL-Ubuntu (or any Redis server)
 - Discord Bot Token
 
-### Installation
+### Setup Steps
 
-1. **Clone the repository**
+1. **Configure WSL Redis for Windows access**
 ```bash
-git clone <repository-url>
-cd PoE-Data
+# Run the check script to verify Redis setup
+check-redis.bat
+
+# If Redis is not accessible from Windows, configure it:
+wsl bash -c "redis-cli -a 'YOUR_REDIS_PASSWORD' CONFIG SET bind '0.0.0.0'"
 ```
 
 2. **Install dependencies**
@@ -60,62 +63,45 @@ Edit `.env`:
 # Discord Configuration
 DISCORD_TOKEN=your_bot_token_here
 DISCORD_CLIENT_ID=your_client_id_here
-DISCORD_GUILD_ID=your_test_guild_id_here
+DISCORD_GUILD_ID_TEST=your_test_guild_id_here
 
-# Redis Configuration (if not using localhost)
-REDIS_HOST=localhost
+# Redis Configuration (WSL-Ubuntu)
+# Get your WSL IP with: wsl hostname -I
+REDIS_HOST=172.19.187.251  # Your WSL IP
 REDIS_PORT=6379
-REDIS_PASSWORD=
+REDIS_PASSWORD=your_redis_password
 
 # Bot Configuration
 DEFAULT_LEAGUE=Rise of the Abyssal
 ```
 
-4. **Deploy slash commands**
-
-For development (instant updates in test server):
+4. **Deploy Discord commands**
 ```bash
-npm run deploy-commands
-```
-
-For production (global, takes ~1 hour):
-```bash
-npm run deploy-commands:prod
+deploy-commands.bat
 ```
 
 5. **Start the bot**
 
-Development mode with auto-restart:
+Development mode (recommended - auto-reload):
 ```bash
-npm run dev
+dev.bat
 ```
 
 Production mode:
 ```bash
-npm run build
-npm start
+start.bat
 ```
 
-## Docker Deployment
+✅ **That's it!** The bot is now running and will show all logs directly in the console.
 
-### Using Docker Compose (Recommended)
+## Available Scripts
 
-1. Create `.env` file with your credentials
-2. Run with Docker Compose:
-
-```bash
-docker-compose up -d
-```
-
-This will start both the bot and Redis server.
-
-### Using Docker Only
-
-Build and run:
-```bash
-docker build -t poe2-discord-bot .
-docker run -d --env-file .env poe2-discord-bot
-```
+| Script | Purpose |
+|--------|---------|
+| `dev.bat` | Start bot in development mode (auto-reload, debug logs) |
+| `start.bat` | Build and start bot in production mode |
+| `deploy-commands.bat` | Register slash commands with Discord |
+| `check-redis.bat` | Verify Redis connection and configuration |
 
 ## Discord Bot Setup
 
@@ -145,12 +131,20 @@ poe2-discord-bot/
 │   ├── bot.ts             # Discord client setup
 │   └── index.ts           # Entry point
 ├── deploy-commands.ts     # Command deployment script
-├── Dockerfile
-├── docker-compose.yml
+├── check-redis.bat        # Redis diagnostic tool
+├── dev.bat                # Development start script
+├── start.bat              # Production start script
 └── package.json
 ```
 
 ## Development
+
+### Development Workflow
+
+1. Make code changes in `src/`
+2. Save file
+3. Bot auto-reloads (if using `dev.bat`)
+4. Test immediately in Discord
 
 ### Building
 
@@ -158,16 +152,93 @@ poe2-discord-bot/
 npm run build
 ```
 
-### Linting
+### NPM Scripts
 
 ```bash
-npm run lint
+npm run dev          # Start in development mode (auto-reload)
+npm run build        # Build TypeScript to dist/
+npm start            # Start production build
+npm run deploy-commands  # Deploy commands to Discord
 ```
 
-### Testing
+## WSL Redis Setup
+
+### Required Configuration
+
+For the bot to connect from Windows to Redis on WSL, Redis must be configured to accept external connections:
 
 ```bash
-npm test
+# Set Redis to bind to all interfaces (allows Windows access)
+wsl bash -c "redis-cli -a 'YOUR_PASSWORD' CONFIG SET bind '0.0.0.0'"
+
+# Make it persistent (optional - edit Redis config file)
+wsl sudo find /etc -name "redis.conf" -exec sed -i 's/bind 127.0.0.1/bind 0.0.0.0/g' {} \;
+wsl sudo service redis-server restart
+```
+
+### Redis Management
+
+```bash
+# Start Redis
+wsl sudo service redis-server start
+
+# Stop Redis
+wsl sudo service redis-server stop
+
+# Restart Redis
+wsl sudo service redis-server restart
+
+# Check status
+wsl sudo service redis-server status
+
+# Test connection
+wsl redis-cli -a 'YOUR_PASSWORD' ping
+# Should return: PONG
+```
+
+### Get WSL IP Address
+
+```bash
+wsl hostname -I
+# Example output: 172.19.187.251
+```
+
+Use this IP in your `.env` file for `REDIS_HOST`.
+
+## Troubleshooting
+
+### Bot won't start - "ECONNREFUSED" error
+
+**Problem:** Can't connect to Redis from Windows.
+
+**Solution:**
+1. Run `check-redis.bat` to diagnose
+2. Ensure Redis is bound to `0.0.0.0` (see WSL Redis Setup above)
+3. Verify WSL IP hasn't changed: `wsl hostname -I`
+4. Update `REDIS_HOST` in `.env` if IP changed
+
+### WSL IP address changed
+
+**Problem:** Redis connection fails after restart.
+
+**Solution:**
+```bash
+# Get new WSL IP
+wsl hostname -I
+
+# Update .env with new IP
+# Edit REDIS_HOST=<new-ip>
+```
+
+### Redis authentication failed
+
+**Problem:** "NOAUTH Authentication required"
+
+**Solution:**
+Verify password in `.env` matches Redis config:
+```bash
+wsl bash -c "redis-cli -a 'YOUR_PASSWORD' --no-auth-warning ping"
+# Should return: PONG
 ```
 
 ## Features Roadmap
@@ -197,6 +268,31 @@ Data is cached in Redis with 5-minute refresh intervals.
 - **poe.ninja**: 12 requests per 5 minutes (shared across bot)
 - **Discord**: 5 commands per 5 seconds per user (built-in)
 - **Commands**: Individual cooldowns (3-15 seconds)
+
+## Deployment
+
+For production deployment, you can use:
+- **VPS/Dedicated Server**: Run `start.bat` with a process manager like PM2
+- **Cloud Platforms**: Heroku, Railway, Render (all support Node.js + Redis)
+- **Keep-alive**: Use a service like UptimeRobot to prevent sleep
+
+### Heroku Deployment Example
+
+1. Add Redis add-on (Heroku Redis or Redis Cloud)
+2. Set environment variables via Heroku dashboard
+3. Add Puppeteer buildpack:
+   ```bash
+   heroku buildpacks:add jontewks/puppeteer
+   heroku buildpacks:add heroku/nodejs
+   ```
+4. Create `Procfile`:
+   ```
+   worker: node dist/src/index.js
+   ```
+5. Deploy:
+   ```bash
+   git push heroku main
+   ```
 
 ## Contributing
 

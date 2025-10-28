@@ -8,7 +8,22 @@
       "Bash(git add:*)",
       "Bash(pkill:*)",
       "Bash(docker-compose up:*)",
-      "Bash(npm run build:*)"
+      "Bash(npm run build:*)",
+      "Bash(wsl -e redis-cli:*)",
+      "Bash(wsl hostname:*)",
+      "Bash(wsl -e cat:*)",
+      "Bash(wsl bash -c \"cat /etc/redis/redis.conf 2>/dev/null | grep ''^bind'' || echo ''Config not found in /etc/redis''\")",
+      "Bash(wsl bash -c \"ps aux | grep redis-server | grep -v grep\")",
+      "Bash(wsl bash:*)",
+      "Bash(npm run dev:*)",
+      "Bash(timeout /t 5 /nobreak)",
+      "Bash(del Dockerfile docker-compose.yml)",
+      "Bash(del start.bat stop.bat restart.bat rebuild.bat logs.bat status.bat)",
+      "Bash(cmd /c \"del /f /q Dockerfile docker-compose.yml 2>nul\")",
+      "Bash(cmd /c \"del /f /q start.bat stop.bat restart.bat rebuild.bat logs.bat status.bat 2>nul\")",
+      "Bash(cmd /c \"ren dev-local.bat dev.bat && ren start-local.bat start.bat\")",
+      "Bash(cmd /c \"ren deploy-commands-local.bat deploy-commands.bat\")",
+      "Bash(dir:*)"
     ],
     "deny": [],
     "ask": []

@@ -638,12 +638,11 @@ async warmCache() {
 ### Phase 4: Polish & Optimization (Week 4)
 **Goal**: Production-ready
 
-- [ ] Comprehensive error handling
-- [ ] Logging system (Winston or Pino)
+- [x] Comprehensive error handling
+- [x] Logging system (Winston)
 - [ ] Performance monitoring
 - [ ] Command usage analytics
-- [ ] Docker containerization
-- [ ] Deployment documentation
+- [x] Deployment documentation
 - [ ] Bot status dashboard (optional)
 - [ ] Unit tests for critical functions
 
@@ -906,61 +905,61 @@ describe('CacheManager', () => {
 
 ## Deployment
 
-### Docker Deployment (Recommended)
-```dockerfile
-# Dockerfile
-FROM node:20-alpine
+### Local/VPS Deployment
 
-WORKDIR /app
+The bot runs directly on Node.js with Redis on WSL-Ubuntu (or any Redis server).
 
-# Install Puppeteer dependencies
-RUN apk add --no-cache chromium
+**Requirements:**
+- Node.js 18+
+- Redis server (WSL-Ubuntu, native, or cloud-hosted)
+- Windows batch scripts provided for easy management
 
-# Set Puppeteer to use system chromium
-ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
-ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
+**Quick Start:**
+```bash
+# Install dependencies
+npm install
 
-COPY package*.json ./
-RUN npm ci --only=production
+# Configure .env file
+# (See .env.example for all options)
 
-COPY . .
-RUN npm run build
+# Deploy commands to Discord
+deploy-commands.bat
 
-CMD ["node", "dist/index.js"]
+# Start bot
+dev.bat  # Development (auto-reload)
+# or
+start.bat  # Production
 ```
 
-```yaml
-# docker-compose.yml
-version: '3.8'
+### Cloud Deployment (Heroku, Railway, Render)
 
-services:
-  redis:
-    image: redis:7-alpine
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis-data:/data
-    command: redis-server --appendonly yes
+**For Heroku:**
+1. Add Redis add-on (Heroku Redis or Redis Cloud)
+2. Set environment variables via dashboard
+3. Add Puppeteer buildpack:
+   ```bash
+   heroku buildpacks:add jontewks/puppeteer
+   heroku buildpacks:add heroku/nodejs
+   ```
+4. Create `Procfile`:
+   ```
+   worker: node dist/src/index.js
+   ```
+5. Deploy: `git push heroku main`
 
-  bot:
-    build: .
-    depends_on:
-      - redis
-    environment:
-      - REDIS_HOST=redis
-      - DISCORD_TOKEN=${DISCORD_TOKEN}
-    restart: unless-stopped
-
-volumes:
-  redis-data:
-```
+**For Railway/Render:**
+- Add Redis plugin/service
+- Set environment variables
+- Deploy via GitHub integration
+- Use start command: `npm start`
 
 ### Deployment Checklist
-- [ ] Environment variables configured
-- [ ] Redis persistence enabled
-- [ ] Bot token secured
-- [ ] Commands deployed to production
-- [ ] Monitoring/logging configured
+- [x] Environment variables configured (.env)
+- [x] Redis connection configured (WSL or cloud)
+- [x] Bot token secured
+- [x] Commands deployed to production
+- [x] Logging configured (Winston)
+- [ ] Monitoring/alerting set up
 - [ ] Backup strategy in place
 - [ ] Bot invited to target servers
 
