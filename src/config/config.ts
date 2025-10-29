@@ -7,7 +7,8 @@ interface Config {
   discord: {
     token: string;
     clientId: string;
-    guildId?: string;
+    guildIdTest?: string;
+    guildIdProd?: string;
   };
   redis: {
     host: string;
@@ -53,7 +54,8 @@ export const config: Config = {
   discord: {
     token: process.env.DISCORD_TOKEN!,
     clientId: process.env.DISCORD_CLIENT_ID!,
-    guildId: process.env.DISCORD_GUILD_ID
+    guildIdTest: process.env.DISCORD_GUILD_ID_TEST,
+    guildIdProd: process.env.DISCORD_GUILD_ID_PROD
   },
   redis: {
     host: process.env.REDIS_HOST || 'localhost',

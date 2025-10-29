@@ -59,6 +59,12 @@ async function deployCommands() {
     process.exit(1);
   }
 
+  if (!guildIdTest && !guildIdProd) {
+    console.error('❌ Missing both DISCORD_GUILD_ID_TEST and DISCORD_GUILD_ID_PROD in .env file');
+    console.log('ℹ️  Please set at least DISCORD_GUILD_ID_TEST in your .env file');
+    process.exit(1);
+  }
+
   const rest = new REST().setToken(token);
 
   try {
@@ -76,39 +82,66 @@ async function deployCommands() {
 
     console.log(`\n🚀 Starting deployment of ${commands.length} application (/) commands...\n`);
 
-    // Smart deployment: use PROD if set, fallback to TEST
-    let guildId: string | undefined;
-    let envName: string;
+    // Deploy to both test and prod servers
+    const deployments: Array<{ guildId: string; name: string }> = [];
 
-    if (guildIdProd) {
-      guildId = guildIdProd;
-      envName = 'PRODUCTION';
-      console.log('✓ Production server ID found - deploying to PRODUCTION');
-    } else if (guildIdTest) {
-      guildId = guildIdTest;
-      envName = 'TEST';
-      console.log('⚠️  Production server ID not set - deploying to TEST server');
-    } else {
-      console.error('❌ Missing both DISCORD_GUILD_ID_PROD and DISCORD_GUILD_ID_TEST in .env file');
-      console.log('ℹ️  Please set at least DISCORD_GUILD_ID_TEST in your .env file');
-      process.exit(1);
+    if (guildIdTest) {
+      deployments.push({ guildId: guildIdTest, name: 'TEST' });
     }
 
-    console.log(`📡 Deploying commands to ${envName} server (${guildId})...`);
+    if (guildIdProd) {
+      deployments.push({ guildId: guildIdProd, name: 'PRODUCTION' });
+    }
 
-    await rest.put(
-      Routes.applicationGuildCommands(clientId, guildId),
-      { body: commandData }
-    );
+    const results: Array<{ name: string; success: boolean; error?: any }> = [];
 
-    console.log(`✅ Successfully deployed commands to ${envName} server`)
+    for (const deployment of deployments) {
+      console.log(`📡 Deploying to ${deployment.name} server (${deployment.guildId})...`);
 
+      try {
+        await rest.put(
+          Routes.applicationGuildCommands(clientId, deployment.guildId),
+          { body: commandData }
+        );
+
+        console.log(`✅ Successfully deployed to ${deployment.name} server\n`);
+        results.push({ name: deployment.name, success: true });
+
+      } catch (error: any) {
+        // Graceful fallback - don't fail if bot isn't in the server yet
+        if (error.code === 50001 || error.code === 10004) {
+          console.log(`⚠️  Bot not in ${deployment.name} server yet - skipping deployment`);
+          console.log(`   (This is normal if bot hasn't been invited to ${deployment.name} yet)\n`);
+          results.push({ name: deployment.name, success: false, error: 'Bot not in server' });
+        } else {
+          console.error(`❌ Failed to deploy to ${deployment.name} server:`, error.message);
+          results.push({ name: deployment.name, success: false, error: error.message });
+        }
+      }
+    }
+
+    // Summary
     console.log('\n📋 Deployed Commands:');
     commands.forEach(cmd => {
       console.log(`   • /${cmd.data.name} - ${cmd.data.description}`);
     });
 
-    console.log('\n✨ Deployment complete!');
+    console.log('\n📊 Deployment Summary:');
+    results.forEach(result => {
+      if (result.success) {
+        console.log(`   ✅ ${result.name}: Deployed successfully`);
+      } else {
+        console.log(`   ⚠️  ${result.name}: ${result.error}`);
+      }
+    });
+
+    const successCount = results.filter(r => r.success).length;
+    if (successCount > 0) {
+      console.log(`\n✨ Deployment complete! (${successCount}/${results.length} servers)`);
+    } else {
+      console.log('\n⚠️  No deployments succeeded. Please check bot permissions and server IDs.');
+      process.exit(1);
+    }
 
   } catch (error) {
     console.error('❌ Error deploying commands:', error);
