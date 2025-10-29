@@ -39,6 +39,11 @@ export class CurrencyAnalyzer {
           const currentPrice = c.chaosEquivalent;
           const previousPrice = currentPrice / (1 + changePercent / 100);
 
+          // Debug logging for first few items
+          if (currencies.indexOf(c) < 3) {
+            logger.info(`[Movers Debug] ${c.currencyTypeName}: current=${currentPrice}, change=${changePercent}%, previous=${previousPrice}`);
+          }
+
           return {
             currencyTypeName: c.currencyTypeName,
             currentPrice,

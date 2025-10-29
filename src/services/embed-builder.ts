@@ -151,6 +151,10 @@ export class EmbedBuilderService {
       const gainersText = gainers
         .map((m, i) => {
           const emoji = getPriceChangeEmoji(m.changePercent);
+          // Debug: log the actual values being formatted
+          if (i === 0) {
+            console.log(`[Embed Debug] First gainer: ${m.currencyTypeName}, prev=${m.previousPrice}, curr=${m.currentPrice}, formatted prev=${formatChaosPrice(m.previousPrice)}, formatted curr=${formatChaosPrice(m.currentPrice)}`);
+          }
           return `${i + 1}. **${m.currencyTypeName}**: ${formatPercentChange(m.changePercent)} ${emoji}\n   ${formatChaosPrice(m.previousPrice)} → ${formatChaosPrice(m.currentPrice)}`;
         })
         .join('\n\n');
@@ -329,7 +333,7 @@ export class EmbedBuilderService {
       .addFields(
         {
           name: '/price [currency] [league]',
-          value: 'Get current price and stats for a currency',
+          value: 'Get current price and stats for a currency with trends',
           inline: false
         },
         {
