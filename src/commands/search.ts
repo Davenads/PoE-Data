@@ -25,7 +25,10 @@ const command: Command = {
     ),
 
   async execute(interaction: ChatInputCommandInteraction) {
-    await interaction.deferReply();
+    // Reply immediately with loading message
+    await interaction.reply({
+      embeds: [embedBuilder.createLoadingEmbed('Searching currencies...')]
+    });
 
     try {
       const query = sanitizeInput(interaction.options.getString('query', true));

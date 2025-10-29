@@ -27,7 +27,10 @@ const command: Command = {
     ),
 
   async execute(interaction: ChatInputCommandInteraction) {
-    await interaction.deferReply();
+    // Reply immediately with loading message
+    await interaction.reply({
+      embeds: [embedBuilder.createLoadingEmbed('Fetching price data...')]
+    });
 
     try {
       // Get parameters

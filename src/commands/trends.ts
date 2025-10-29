@@ -19,7 +19,10 @@ const command: Command = {
     ),
 
   async execute(interaction: ChatInputCommandInteraction) {
-    await interaction.deferReply();
+    // Reply immediately with loading message
+    await interaction.reply({
+      embeds: [embedBuilder.createLoadingEmbed('Analyzing market trends...')]
+    });
 
     try {
       let league = sanitizeInput(interaction.options.getString('league') || config.bot.defaultLeague);

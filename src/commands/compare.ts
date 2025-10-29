@@ -34,7 +34,10 @@ const command: Command = {
     ),
 
   async execute(interaction: ChatInputCommandInteraction) {
-    await interaction.deferReply();
+    // Reply immediately with loading message
+    await interaction.reply({
+      embeds: [embedBuilder.createLoadingEmbed('Comparing currency prices...')]
+    });
 
     try {
       let currency1 = sanitizeInput(interaction.options.getString('currency1', true));

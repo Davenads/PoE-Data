@@ -313,6 +313,17 @@ export class EmbedBuilderService {
   }
 
   /**
+   * Create loading embed
+   */
+  createLoadingEmbed(message: string = 'Fetching fresh data from poe.ninja...'): EmbedBuilder {
+    return new EmbedBuilder()
+      .setTitle('⏳ Loading')
+      .setDescription(message + '\n\nThis may take a few seconds if the cache is being refreshed.')
+      .setColor(EMBED_COLORS.INFO)
+      .setTimestamp();
+  }
+
+  /**
    * Create help embed
    */
   createHelpEmbed(): EmbedBuilder {

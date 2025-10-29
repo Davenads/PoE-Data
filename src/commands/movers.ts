@@ -38,7 +38,10 @@ const command: Command = {
     ),
 
   async execute(interaction: ChatInputCommandInteraction) {
-    await interaction.deferReply();
+    // Reply immediately with loading message
+    await interaction.reply({
+      embeds: [embedBuilder.createLoadingEmbed('Calculating market movers...')]
+    });
 
     try {
       const type = interaction.options.getString('type') || 'all';
