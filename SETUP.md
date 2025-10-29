@@ -49,9 +49,10 @@ DEFAULT_LEAGUE=Rise of the Abyssal
 
 If you don't have Redis running:
 
-**Windows (with WSL or Docker):**
+**Windows (with WSL):**
 ```bash
-docker run -d -p 6379:6379 redis:7-alpine
+wsl
+sudo service redis-server start
 ```
 
 **Linux/Mac:**
@@ -59,10 +60,10 @@ docker run -d -p 6379:6379 redis:7-alpine
 redis-server
 ```
 
-Or use the Docker Compose setup (includes Redis):
-```bash
-docker-compose up -d redis
-```
+**Or use a cloud Redis service:**
+- Upstash (free tier available)
+- Redis Cloud
+- ElastiCache (AWS)
 
 ## Step 6: Deploy Commands
 
@@ -139,23 +140,6 @@ Then try:
 - Make sure Redis is running on localhost:6379
 - Check REDIS_HOST and REDIS_PORT in .env
 - Test Redis: `redis-cli ping` (should return PONG)
-
-## Docker Setup (Alternative)
-
-If you prefer Docker:
-
-```bash
-# Create .env file first (see Step 4)
-
-# Start everything (bot + Redis)
-docker-compose up -d
-
-# View logs
-docker-compose logs -f bot
-
-# Stop
-docker-compose down
-```
 
 ## Next Steps
 
