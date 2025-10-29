@@ -6,7 +6,8 @@ import {
   formatNumber,
   formatRelativeTime,
   getPriceChangeEmoji,
-  getSentimentEmoji
+  getSentimentEmoji,
+  formatPrice
 } from '../utils/formatters';
 import type {
   CurrencyData,
@@ -69,19 +70,36 @@ export class EmbedBuilderService {
       ? currency1.currencyTypeName
       : currency2.currencyTypeName;
 
+    // Helper function to format ratio - use k/m/b notation for large numbers, otherwise fixed decimals
+    const formatRatio = (ratio: number): string => {
+      if (ratio >= 100) {
+        // Use k/m/b notation for ratios >= 100
+        return formatPrice(ratio, 2);
+      } else if (ratio >= 1) {
+        // Use 2 decimals for ratios >= 1
+        return ratio.toFixed(2);
+      } else if (ratio >= 0.01) {
+        // Use 4 decimals for small ratios
+        return ratio.toFixed(4);
+      } else {
+        // Use scientific notation for very small ratios
+        return ratio.toExponential(2);
+      }
+    };
+
     // Format exchange rates based on which makes more sense to display
     let exchangeRateText: string;
     if (ratio1to2 >= 1) {
       // If ratio is >= 1, show currency1 -> currency2
-      exchangeRateText = `1 ${currency1.currencyTypeName} = **${ratio1to2.toFixed(2)}** ${currency2.currencyTypeName}`;
-      if (ratio2to1 >= 0.01) {
-        exchangeRateText += `\n1 ${currency2.currencyTypeName} = **${ratio2to1.toFixed(2)}** ${currency1.currencyTypeName}`;
+      exchangeRateText = `1 ${currency1.currencyTypeName} = **${formatRatio(ratio1to2)}** ${currency2.currencyTypeName}`;
+      if (ratio2to1 >= 0.001) {
+        exchangeRateText += `\n1 ${currency2.currencyTypeName} = **${formatRatio(ratio2to1)}** ${currency1.currencyTypeName}`;
       }
     } else {
       // If ratio is < 1, flip it for better readability
-      exchangeRateText = `1 ${currency2.currencyTypeName} = **${ratio2to1.toFixed(2)}** ${currency1.currencyTypeName}`;
-      if (ratio1to2 >= 0.01) {
-        exchangeRateText += `\n1 ${currency1.currencyTypeName} = **${ratio1to2.toFixed(2)}** ${currency2.currencyTypeName}`;
+      exchangeRateText = `1 ${currency2.currencyTypeName} = **${formatRatio(ratio2to1)}** ${currency1.currencyTypeName}`;
+      if (ratio1to2 >= 0.001) {
+        exchangeRateText += `\n1 ${currency1.currencyTypeName} = **${formatRatio(ratio1to2)}** ${currency2.currencyTypeName}`;
       }
     }
 

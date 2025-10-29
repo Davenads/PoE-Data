@@ -1,32 +1,52 @@
 import { REST, Routes } from 'discord.js';
 import dotenv from 'dotenv';
+import { readdirSync } from 'fs';
+import { join } from 'path';
+import type { Command } from './src/models/command.interface';
 
 // Load environment variables
 dotenv.config();
 
-// Import commands
-import priceCommand from './src/commands/price';
-import helpCommand from './src/commands/help';
-import compareCommand from './src/commands/compare';
-import moversCommand from './src/commands/movers';
-import searchCommand from './src/commands/search';
-import leagueCommand from './src/commands/league';
-import trendsCommand from './src/commands/trends';
-import chartCommand from './src/commands/chart';
+/**
+ * Dynamically load all command files from the commands directory
+ */
+async function loadCommands(): Promise<Command[]> {
+  const commands: Command[] = [];
+  const commandsPath = join(__dirname, 'src', 'commands');
 
-const commands = [
-  priceCommand,
-  helpCommand,
-  compareCommand,
-  moversCommand,
-  searchCommand,
-  leagueCommand,
-  trendsCommand,
-  chartCommand
-];
+  try {
+    const commandFiles = readdirSync(commandsPath).filter(file => {
+      // Load .ts files in development or .js files in production
+      return (file.endsWith('.ts') || file.endsWith('.js')) && file !== 'index.ts' && file !== 'index.js';
+    });
 
-// Get command data
-const commandData = commands.map(cmd => cmd.data.toJSON());
+    console.log(`📂 Found ${commandFiles.length} command files in ${commandsPath}`);
+
+    for (const file of commandFiles) {
+      const filePath = join(commandsPath, file);
+
+      try {
+        // Dynamic import (works with both TS and JS)
+        const commandModule = await import(filePath);
+        const command = commandModule.default;
+
+        if (command && command.data && command.execute) {
+          commands.push(command);
+          console.log(`   ✓ Loaded: ${file} (/${command.data.name})`);
+        } else {
+          console.warn(`   ⚠️  Skipped: ${file} (missing data or execute)`);
+        }
+      } catch (error) {
+        console.error(`   ❌ Failed to load: ${file}`, error);
+      }
+    }
+
+    return commands;
+  } catch (error) {
+    console.error('❌ Error reading commands directory:', error);
+    throw error;
+  }
+}
 
 async function deployCommands() {
   const token = process.env.DISCORD_TOKEN;
@@ -42,7 +62,19 @@ async function deployCommands() {
   const rest = new REST().setToken(token);
 
   try {
-    console.log(`🚀 Started deploying ${commands.length} application (/) commands...`);
+    // Dynamically load all commands
+    console.log('🔍 Loading commands...\n');
+    const commands = await loadCommands();
+
+    if (commands.length === 0) {
+      console.error('❌ No valid commands found to deploy');
+      process.exit(1);
+    }
+
+    // Get command data for deployment
+    const commandData = commands.map(cmd => cmd.data.toJSON());
+
+    console.log(`\n🚀 Starting deployment of ${commands.length} application (/) commands...\n`);
 
     // Smart deployment: use PROD if set, fallback to TEST
     let guildId: string | undefined;
