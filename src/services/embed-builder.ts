@@ -42,11 +42,6 @@ export class EmbedBuilderService {
           name: '📈 24h Change',
           value: `${formatPercentChange(change)} ${emoji}`,
           inline: true
-        },
-        {
-          name: '📦 Listings',
-          value: formatNumber(currency.pay.listing_count),
-          inline: true
         }
       )
       .setTimestamp()
