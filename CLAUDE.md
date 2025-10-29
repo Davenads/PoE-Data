@@ -1,5 +1,21 @@
 # PoE2 Economy Discord Bot - Project Plan
 
+## Development Guidelines
+
+### Git Commit Messages
+- Keep commit messages concise and descriptive
+- Use conventional commit format: `type: description`
+- DO NOT include author attribution (no "Co-Authored-By" or "Generated with Claude Code")
+- DO NOT add emojis to commit messages
+- Example: `feat: add loading messages for data-fetching commands`
+
+### Code Changes
+- Always wait for user approval before committing and pushing changes
+- Build and test locally before committing
+- Never push directly after making changes - wait for QA confirmation
+
+---
+
 ## Executive Summary
 A Discord bot that provides Path of Exile 2 economy information through slash commands, leveraging real-time data scraped from poe.ninja. Built with discord.js following best practices for modularity, scalability, and maintainability.
 
