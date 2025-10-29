@@ -323,6 +323,84 @@ export class EmbedBuilderService {
   }
 
   /**
+   * Create Trinity calculation embed
+   */
+  createTrinityEmbed(
+    inputs: {
+      fireMin: number; fireMax: number;
+      coldMin: number; coldMax: number;
+      lightningMin: number; lightningMax: number;
+      gemLevel: number;
+    },
+    result: {
+      avgResonance: { fire: number; cold: number; lightning: number };
+      totalResonance: number;
+      damageBonus: number;
+      distribution: { fire: number; cold: number; lightning: number };
+      efficiency: number;
+      recommendation?: string;
+      weakElement?: string;
+    }
+  ): EmbedBuilder {
+    const efficiencyColor = result.efficiency >= 80 ? EMBED_COLORS.SUCCESS :
+                            result.efficiency >= 60 ? EMBED_COLORS.INFO :
+                            result.efficiency >= 40 ? EMBED_COLORS.NEUTRAL :
+                            EMBED_COLORS.ERROR;
+
+    const fields = [
+      {
+        name: 'Damage Ranges',
+        value: `Fire: ${inputs.fireMin}-${inputs.fireMax}\nCold: ${inputs.coldMin}-${inputs.coldMax}\nLightning: ${inputs.lightningMin}-${inputs.lightningMax}`,
+        inline: true
+      },
+      {
+        name: 'Hit Distribution',
+        value: `Fire: ${result.distribution.fire}%\nCold: ${result.distribution.cold}%\nLightning: ${result.distribution.lightning}%`,
+        inline: true
+      },
+      {
+        name: '\u200B',
+        value: '\u200B',
+        inline: true
+      },
+      {
+        name: 'Average Resonance',
+        value: `Fire: ${result.avgResonance.fire}\nCold: ${result.avgResonance.cold}\nLightning: ${result.avgResonance.lightning}`,
+        inline: true
+      },
+      {
+        name: 'Performance',
+        value: `Total: ${result.totalResonance}/300\nDamage Bonus: **${result.damageBonus}%** more\nEfficiency: **${result.efficiency}%**`,
+        inline: true
+      }
+    ];
+
+    // Add recommendation if build is 2-element focused
+    if (result.recommendation) {
+      fields.push({
+        name: '\u200B',
+        value: '\u200B',
+        inline: true
+      });
+      fields.push({
+        name: '💡 Multi-Skill Recommendation',
+        value: result.recommendation,
+        inline: false
+      });
+    }
+
+    const embed = new EmbedBuilder()
+      .setTitle('⚡ Trinity Support Efficiency')
+      .setDescription(`**Gem Level:** ${inputs.gemLevel}\n\n*Single-skill steady-state calculation. For multi-skill rotations, combine with other element skills to approach 300/300 resonance.*`)
+      .setColor(efficiencyColor)
+      .addFields(fields)
+      .setFooter({ text: 'Efficiency normalized to max achievable with perfect 33.3% balance (~214 total resonance)' })
+      .setTimestamp();
+
+    return embed;
+  }
+
+  /**
    * Create help embed
    */
   createHelpEmbed(): EmbedBuilder {

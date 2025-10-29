@@ -32,7 +32,10 @@
       "Bash(wsl redis-cli:*)",
       "Bash(npm run deploy-commands:*)",
       "Bash(git commit:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "WebSearch",
+      "WebFetch(domain:www.poe2wiki.net)",
+      "WebFetch(domain:poe2db.tw)"
     ],
     "deny": [],
     "ask": []
