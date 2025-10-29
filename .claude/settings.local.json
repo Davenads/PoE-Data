@@ -30,7 +30,9 @@
       "Bash(cmd /c \"taskkill /F /IM node.exe\")",
       "Bash(curl:*)",
       "Bash(wsl redis-cli:*)",
-      "Bash(npm run deploy-commands:*)"
+      "Bash(npm run deploy-commands:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)"
     ],
     "deny": [],
     "ask": []
