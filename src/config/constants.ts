@@ -152,10 +152,9 @@ export const SCHEDULED_TASKS = {
 
 // API feature flags
 export const API_FLAGS = {
-  // PoE2 API disabled due to IP block from rate limit violations (Oct 30, 2025)
-  // Returns 404 for all leagues - likely temporary ban lasting 24-48 hours
-  // Try re-enabling after ban period expires
-  ENABLE_POE2_API: false
+  // PoE2 API re-enabled with new endpoints (Oct 30, 2025)
+  // New structure: /poe2/api/economy/exchange/current/overview
+  ENABLE_POE2_API: true
 } as const;
 
 // Cache TTL values (in seconds)

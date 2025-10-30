@@ -19,29 +19,35 @@ Using PoE2 Direct API provides approximately 26x speed improvement over DOM scra
 
 ---
 
-## Path of Exile 2 API (Undocumented)
+## Path of Exile 2 API
 
-### Discovery Method
-These endpoints were discovered through network request interception of the poe.ninja website. They are currently undocumented but stable.
+### Update (October 30, 2025)
+The poe.ninja developer updated the API endpoints. The new structure is now consistent between PoE1 and PoE2.
 
-### Base URL
-```
-https://poe.ninja/poe2/api/economy/
-```
+### Base URLs
+- **PoE2**: `https://poe.ninja/poe2/api/economy/`
+- **PoE1**: `https://poe.ninja/poe1/api/economy/`
 
 ### Currency Exchange Overview
 
-**Endpoint**: `/currencyexchange/overview`
+**Endpoint**: `/exchange/current/overview`
 
 **Method**: `GET`
 
 **Parameters**:
-- `leagueName` (required): Full league name (case-sensitive)
-- `overviewName` (required): Data type (e.g., "Currency")
+- `league` (required): League name (case-sensitive)
+- `type` (required): Data type (e.g., "Currency")
 
-**Example Request**:
+**Example Requests**:
 ```bash
-curl "https://poe.ninja/poe2/api/economy/currencyexchange/overview?leagueName=Rise%20of%20the%20Abyssal&overviewName=Currency"
+# PoE2 - Rise of the Abyssal league
+curl "https://poe.ninja/poe2/api/economy/exchange/current/overview?league=Rise%20of%20the%20Abyssal&type=Currency"
+
+# PoE2 - Standard league
+curl "https://poe.ninja/poe2/api/economy/exchange/current/overview?league=Standard&type=Currency"
+
+# PoE1 - Standard league
+curl "https://poe.ninja/poe1/api/economy/exchange/current/overview?league=Standard&type=Currency"
 ```
 
 **Response Structure**:
@@ -107,20 +113,30 @@ const chaosPerItem = 1 / line.primaryValue; // e.g., 0.000559 = 1788 Ex per 1c
 
 ### League Names
 
-League names are case-sensitive and must match exactly.
+League names are case-sensitive and must match exactly. Use the league name directly (no mapping required).
 
-| Display Name | API League Name | Status |
-|-------------|----------------|--------|
-| Dawn | Dawn of the Hunt | Active |
-| Rise of the Abyssal | Rise of the Abyssal | Active |
-| Standard | Standard | Active |
+| League Name | API Support | Notes |
+|-------------|-------------|-------|
+| Rise of the Abyssal | ✅ PoE2 API | Full support (~200ms) |
+| Standard | ✅ PoE2 API / PoE1 API | Both PoE1 and PoE2 versions |
+| Dawn | ❌ Not in API | Must use browser scraping fallback |
 
 **Testing Script**:
 ```typescript
-const response = await axios.get('https://poe.ninja/poe2/api/economy/currencyexchange/overview', {
+// PoE2 API
+const response = await axios.get('https://poe.ninja/poe2/api/economy/exchange/current/overview', {
   params: {
-    leagueName: 'Rise of the Abyssal',
-    overviewName: 'Currency'
+    league: 'Rise of the Abyssal',
+    type: 'Currency'
+  }
+});
+console.log(`Found ${response.data.lines.length} currencies`);
+
+// PoE1 API
+const response = await axios.get('https://poe.ninja/poe1/api/economy/exchange/current/overview', {
+  params: {
+    league: 'Standard',
+    type: 'Currency'
   }
 });
 console.log(`Found ${response.data.lines.length} currencies`);
@@ -128,18 +144,26 @@ console.log(`Found ${response.data.lines.length} currencies`);
 
 ---
 
-## Path of Exile 1 API (Documented)
+## Path of Exile 1 API
 
-### Base URL
+### Update (October 30, 2025)
+The PoE1 API has been updated to match the new structure. The old `/api/data/` endpoints may still work but the new `/poe1/api/economy/` endpoints are recommended.
+
+### New Base URL
+```
+https://poe.ninja/poe1/api/economy/
+```
+
+### Old Base URL (Legacy, may be deprecated)
 ```
 https://poe.ninja/api/data/
 ```
 
 ### Active Leagues (PoE1)
-- Settlers
 - Standard
 - Hardcore
-- Necropolis
+- Settlers (if active)
+- Other seasonal leagues
 
 ### Data Types
 
@@ -281,19 +305,27 @@ const CACHE_TTL = {
 
 ## Testing
 
-### Test PoE2 API Endpoint
+### Test New API Endpoints
 
 ```bash
-# Test Rise of the Abyssal
-curl "https://poe.ninja/poe2/api/economy/currencyexchange/overview?leagueName=Rise%20of%20the%20Abyssal&overviewName=Currency"
+# Test PoE2 - Rise of the Abyssal
+curl "https://poe.ninja/poe2/api/economy/exchange/current/overview?league=Rise%20of%20the%20Abyssal&type=Currency"
 
-# Test Dawn league
-curl "https://poe.ninja/poe2/api/economy/currencyexchange/overview?leagueName=Dawn%20of%20the%20Hunt&overviewName=Currency"
+# Test PoE2 - Standard
+curl "https://poe.ninja/poe2/api/economy/exchange/current/overview?league=Standard&type=Currency"
+
+# Test PoE1 - Standard
+curl "https://poe.ninja/poe1/api/economy/exchange/current/overview?league=Standard&type=Currency"
+
+# Test Dawn league (expected 404 - not in API yet)
+curl "https://poe.ninja/poe2/api/economy/exchange/current/overview?league=Dawn&type=Currency"
 ```
 
-### Expected Results
-- Rise of the Abyssal: ~37 currencies, 200-400ms response time
-- Dawn: ~22 currencies, 200-400ms response time
+### Expected Results (as of Oct 30, 2025)
+- Rise of the Abyssal: ~40 currencies, 200-400ms response time
+- Standard (PoE2): ~31 currencies, 200-400ms response time
+- Standard (PoE1): ~100+ currencies, 200-400ms response time
+- Dawn: 404 (not available in API, use browser scraping fallback)
 
 ---
 
@@ -303,9 +335,10 @@ curl "https://poe.ninja/poe2/api/economy/currencyexchange/overview?leagueName=Da
 
 | League | Method | Response Time | Currencies |
 |--------|--------|--------------|------------|
-| Rise of the Abyssal | PoE2 API | 421ms | 37 |
-| Dawn | PoE2 API | 46ms (cached) | 22 |
-| Any | Puppeteer | 5,000-10,000ms | varies |
+| Rise of the Abyssal | PoE2 API | ~200ms | 40 |
+| Standard (PoE2) | PoE2 API | ~200ms | 31 |
+| Standard (PoE1) | PoE1 API | ~200ms | 100+ |
+| Dawn | Puppeteer (fallback) | ~12,000ms | 16 |
 
 Speed Improvement: PoE2 Direct API is approximately 26x faster than Puppeteer.
 
@@ -315,10 +348,10 @@ Speed Improvement: PoE2 Direct API is approximately 26x faster than Puppeteer.
 
 ### PoE2 API Caveats
 
-1. Undocumented: These endpoints may change without notice
-2. No Sparkline Data: `paySparkLine` and `receiveSparkLine` not available yet
-3. Limited Historical Data: Only current prices available
-4. Case-Sensitive League Names: Must match exactly
+1. **Endpoint Change**: The API structure was updated on Oct 30, 2025 (from `/currencyexchange/overview` to `/exchange/current/overview`)
+2. **Sparkline Data Available**: New API includes sparkline data with 7-day trends
+3. **Case-Sensitive League Names**: Must match exactly
+4. **Not All Leagues Available**: Some temporary leagues (like "Dawn") may not be in the API yet - use browser scraping fallback
 
 ### League Name Mapping
 

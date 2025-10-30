@@ -5,10 +5,9 @@ import { config } from '../config/config';
 import { rateLimiter } from './rate-limiter';
 import { redisStore } from './redis-store';
 import { getLeagueUrlSlug } from '../utils/validators';
-import { API_HEADERS, CURRENCY_KEYWORDS, PUPPETEER_CONFIG, POE2_API_LEAGUE_NAMES, API_FLAGS } from '../config/constants';
+import { API_HEADERS, CURRENCY_KEYWORDS, PUPPETEER_CONFIG, API_FLAGS } from '../config/constants';
 import type {
   CurrencyData,
-  CurrencyOverviewResponse,
   ScrapedCurrencyData,
   Poe2ApiResponse
 } from '../models/types';
@@ -45,7 +44,7 @@ export class PoeNinjaClient {
         logger.debug('PoE2 API fetch failed (expected for PoE1 leagues):', error);
       }
     } else {
-      logger.debug('PoE2 API disabled (deprecated as of October 2025)');
+      logger.debug('PoE2 API disabled via feature flag');
     }
 
     // Try PoE1 API (for PoE1 leagues)
@@ -73,23 +72,20 @@ export class PoeNinjaClient {
   }
 
   /**
-   * Fetch data from PoE2 Direct API (FASTEST - ~200ms)
-   * This is an undocumented API discovered via network interception
+   * Fetch data from PoE2 API (FASTEST - ~200ms)
+   * New endpoint structure as of Oct 30, 2025
    */
   private async fetchFromPoe2Api(league: string): Promise<CurrencyData[]> {
     const endpoint = 'poeninja:poe2api';
 
-    // Map display league name to API league name
-    const apiLeagueName = POE2_API_LEAGUE_NAMES[league] || league;
-
     return await rateLimiter.waitAndExecute(endpoint, async () => {
       try {
         const response = await this.axiosClient.get<Poe2ApiResponse>(
-          'https://poe.ninja/poe2/api/economy/currencyexchange/overview',
+          'https://poe.ninja/poe2/api/economy/exchange/current/overview',
           {
             params: {
-              leagueName: apiLeagueName,
-              overviewName: 'Currency'
+              league: league, // Use league directly, not leagueName
+              type: 'Currency'
             },
             baseURL: '' // Override baseURL for this specific request
           }
@@ -103,7 +99,7 @@ export class PoeNinjaClient {
         return this.convertPoe2ApiData(response.data);
       } catch (error: any) {
         if (error.response?.status === 404) {
-          logger.warn(`League ${league} (API name: ${apiLeagueName}) not found in PoE2 API - falling back to scraping`);
+          logger.warn(`League ${league} not found in PoE2 API - falling back to PoE1 API`);
           return [];
         }
         logger.error(`PoE2 API error for ${league}:`, error);
@@ -175,28 +171,31 @@ export class PoeNinjaClient {
   }
 
   /**
-   * Fetch data from poe.ninja API
+   * Fetch data from PoE1 API
+   * New endpoint structure as of Oct 30, 2025
    */
   private async fetchFromAPI(league: string): Promise<CurrencyData[]> {
     const endpoint = 'poeninja:api';
 
     return await rateLimiter.waitAndExecute(endpoint, async () => {
       try {
-        const response = await this.axiosClient.get<CurrencyOverviewResponse>(
-          '/currencyoverview',
+        const response = await this.axiosClient.get<Poe2ApiResponse>(
+          'https://poe.ninja/poe1/api/economy/exchange/current/overview',
           {
             params: {
-              league,
+              league: league,
               type: 'Currency'
-            }
+            },
+            baseURL: '' // Override baseURL for this specific request
           }
         );
 
-        if (!response.data || !response.data.lines) {
-          throw new Error('Invalid API response structure');
+        if (!response.data || !response.data.lines || !response.data.items) {
+          throw new Error('Invalid PoE1 API response structure');
         }
 
-        return response.data.lines;
+        // Convert PoE1 API to our CurrencyData format (same structure as PoE2)
+        return this.convertPoe2ApiData(response.data);
       } catch (error: any) {
         if (error.response?.status === 404) {
           logger.warn(`League ${league} not found in API`);
