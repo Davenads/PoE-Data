@@ -1,4 +1,4 @@
-import { SlashCommandBuilder, ChatInputCommandInteraction } from 'discord.js';
+import { SlashCommandBuilder, ChatInputCommandInteraction, AutocompleteInteraction } from 'discord.js';
 import { currencyAnalyzer } from '../services/currency-analyzer';
 import { embedBuilder } from '../services/embed-builder';
 import { config } from '../config/config';
@@ -16,6 +16,7 @@ const command: Command = {
         .setName('league')
         .setDescription('League name')
         .setRequired(false)
+        .setAutocomplete(true)
     ),
 
   async execute(interaction: ChatInputCommandInteraction) {
@@ -25,6 +26,9 @@ const command: Command = {
     });
 
     try {
+      // Log command invocation
+      logger.info(`[trends] Invoked by ${interaction.user.username} (${interaction.user.id}) in guild ${interaction.guild?.id || 'DM'}`);
+
       let league = sanitizeInput(interaction.options.getString('league') || config.bot.defaultLeague);
 
       if (!isValidLeague(league)) {
@@ -47,6 +51,28 @@ const command: Command = {
       await interaction.editReply({
         embeds: [embedBuilder.createErrorEmbed('Error', ERROR_MESSAGES.UNKNOWN_ERROR)]
       });
+    }
+  },
+
+  async autocomplete(interaction: AutocompleteInteraction) {
+    try {
+      const focusedOption = interaction.options.getFocused(true);
+
+      if (focusedOption.name === 'league') {
+        const query = focusedOption.value.toLowerCase();
+        const leagues = ['Dawn', 'Standard', 'Rise of the Abyssal', 'abyss'];
+
+        const filtered = leagues
+          .filter(league => league.toLowerCase().includes(query))
+          .slice(0, 25);
+
+        await interaction.respond(
+          filtered.map(league => ({ name: league, value: league }))
+        );
+      }
+    } catch (error) {
+      logger.error('Error in autocomplete:', error);
+      await interaction.respond([]);
     }
   },
 

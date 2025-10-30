@@ -40,6 +40,9 @@ const command: Command = {
     });
 
     try {
+      // Log command invocation
+      logger.info(`[compare] Invoked by ${interaction.user.username} (${interaction.user.id}) in guild ${interaction.guild?.id || 'DM'}`);
+
       let currency1 = sanitizeInput(interaction.options.getString('currency1', true));
       let currency2 = sanitizeInput(interaction.options.getString('currency2', true));
       let league = sanitizeInput(interaction.options.getString('league') || config.bot.defaultLeague);

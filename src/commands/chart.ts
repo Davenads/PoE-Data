@@ -35,12 +35,16 @@ const command: Command = {
         .setName('league')
         .setDescription('League name')
         .setRequired(false)
+        .setAutocomplete(true)
     ),
 
   async execute(interaction: ChatInputCommandInteraction) {
     await interaction.deferReply();
 
     try {
+      // Log command invocation
+      logger.info(`[chart] Invoked by ${interaction.user.username} (${interaction.user.id}) in guild ${interaction.guild?.id || 'DM'}`);
+
       const currency = sanitizeInput(interaction.options.getString('currency', true));
       const timeframe = interaction.options.getString('timeframe') || '24h';
       let league = sanitizeInput(interaction.options.getString('league') || config.bot.defaultLeague);
@@ -90,6 +94,19 @@ const command: Command = {
       if (focusedOption.name === 'currency') {
         // For now, return empty array - will implement with poeNinjaClient later
         await interaction.respond([]);
+      }
+
+      if (focusedOption.name === 'league') {
+        const query = focusedOption.value.toLowerCase();
+        const leagues = ['Dawn', 'Standard', 'Rise of the Abyssal', 'abyss'];
+
+        const filtered = leagues
+          .filter(league => league.toLowerCase().includes(query))
+          .slice(0, 25);
+
+        await interaction.respond(
+          filtered.map(league => ({ name: league, value: league }))
+        );
       }
     } catch (error) {
       logger.error('Error in autocomplete:', error);

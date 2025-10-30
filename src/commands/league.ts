@@ -39,7 +39,9 @@ const command: Command = {
     await interaction.deferReply();
 
     try {
+      // Log command invocation
       const subcommand = interaction.options.getSubcommand();
+      logger.info(`[league:${subcommand}] Invoked by ${interaction.user.username} (${interaction.user.id}) in guild ${interaction.guild?.id || 'DM'}`);
 
       if (subcommand === 'list') {
         await handleList(interaction);

@@ -33,6 +33,9 @@ const command: Command = {
     });
 
     try {
+      // Log command invocation
+      logger.info(`[price] Invoked by ${interaction.user.username} (${interaction.user.id}) in guild ${interaction.guild?.id || 'DM'}`);
+
       // Get parameters
       let currency = interaction.options.getString('currency', true);
       let league = interaction.options.getString('league') || config.bot.defaultLeague;
@@ -52,7 +55,7 @@ const command: Command = {
       league = normalizeLeagueName(league);
 
       // Fetch currency data
-      logger.info(`Fetching price for ${currency} in ${league}`);
+      logger.info(`[price] Fetching ${currency} in ${league}`);
       const currencyData = await poeNinjaClient.getCurrency(league, currency);
 
       if (!currencyData) {

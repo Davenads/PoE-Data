@@ -230,6 +230,9 @@ const command: Command = {
 
   async execute(interaction: ChatInputCommandInteraction) {
     try {
+      // Log command invocation
+      logger.info(`[trinity] Invoked by ${interaction.user.username} (${interaction.user.id}) in guild ${interaction.guild?.id || 'DM'}`);
+
       const fireMin = interaction.options.getInteger('fire_min', true);
       const fireMax = interaction.options.getInteger('fire_max', true);
       const coldMin = interaction.options.getInteger('cold_min', true);
