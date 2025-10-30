@@ -1,6 +1,6 @@
-// League constants
+// League constants (user-facing names only, no duplicates)
 export const LEAGUES = {
-  POE2: ['Dawn', 'Standard', 'Rise of the Abyssal', 'abyss'] as const,
+  POE2: ['Dawn', 'Rise of the Abyssal', 'Standard'] as const,
   POE1: ['Affliction', 'Standard', 'Hardcore'] as const
 };
 
@@ -21,13 +21,15 @@ export const LEAGUE_URL_SLUGS: Record<string, string> = {
   'Hardcore': 'hardcore'
 } as const;
 
-// League name to API name mapping for PoE2 direct API
-// The PoE2 API uses different league names than the display names
+// League name to API name mapping for PoE2 API
+// Maps user-friendly display names to API endpoint names
 export const POE2_API_LEAGUE_NAMES: Record<string, string> = {
-  'Dawn': 'Dawn',  // Try just "Dawn" instead of "Dawn of the Hunt"
-  'Standard': 'Standard',
+  'Dawn': 'Dawn of the Hunt',
   'Rise of the Abyssal': 'Rise of the Abyssal',
-  'abyss': 'Rise of the Abyssal'
+  'Standard': 'Standard',
+  // Legacy/alternative names (for backward compatibility)
+  'abyss': 'Rise of the Abyssal',  // URL slug variant
+  'Dawn of the Hunt': 'Dawn of the Hunt'  // Full name variant
 } as const;
 
 // Hardcoded PoE2 currency list for fast autocomplete

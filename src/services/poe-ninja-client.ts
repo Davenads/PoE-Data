@@ -5,7 +5,7 @@ import { config } from '../config/config';
 import { rateLimiter } from './rate-limiter';
 import { redisStore } from './redis-store';
 import { getLeagueUrlSlug } from '../utils/validators';
-import { API_HEADERS, CURRENCY_KEYWORDS, PUPPETEER_CONFIG, API_FLAGS } from '../config/constants';
+import { API_HEADERS, CURRENCY_KEYWORDS, PUPPETEER_CONFIG, API_FLAGS, POE2_API_LEAGUE_NAMES } from '../config/constants';
 import type {
   CurrencyData,
   ScrapedCurrencyData,
@@ -78,13 +78,16 @@ export class PoeNinjaClient {
   private async fetchFromPoe2Api(league: string): Promise<CurrencyData[]> {
     const endpoint = 'poeninja:poe2api';
 
+    // Map display league name to API league name
+    const apiLeagueName = POE2_API_LEAGUE_NAMES[league] || league;
+
     return await rateLimiter.waitAndExecute(endpoint, async () => {
       try {
         const response = await this.axiosClient.get<Poe2ApiResponse>(
           'https://poe.ninja/poe2/api/economy/exchange/current/overview',
           {
             params: {
-              league: league, // Use league directly, not leagueName
+              league: apiLeagueName, // Map league name for API
               type: 'Currency'
             },
             baseURL: '' // Override baseURL for this specific request
@@ -99,7 +102,7 @@ export class PoeNinjaClient {
         return this.convertPoe2ApiData(response.data);
       } catch (error: any) {
         if (error.response?.status === 404) {
-          logger.warn(`League ${league} not found in PoE2 API - falling back to PoE1 API`);
+          logger.warn(`League ${league} (API name: ${apiLeagueName}) not found in PoE2 API - falling back to PoE1 API`);
           return [];
         }
         logger.error(`PoE2 API error for ${league}:`, error);
