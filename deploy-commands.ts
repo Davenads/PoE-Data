@@ -85,8 +85,13 @@ async function deployCommands() {
     // Deploy to both test and prod servers
     const deployments: Array<{ guildId: string; name: string }> = [];
 
+    // Parse comma-separated test guild IDs
     if (guildIdTest) {
-      deployments.push({ guildId: guildIdTest, name: 'TEST' });
+      const testGuildIds = guildIdTest.split(',').map(id => id.trim()).filter(Boolean);
+      testGuildIds.forEach((guildId, index) => {
+        const serverLabel = testGuildIds.length > 1 ? `TEST ${index + 1}` : 'TEST';
+        deployments.push({ guildId, name: serverLabel });
+      });
     }
 
     if (guildIdProd) {

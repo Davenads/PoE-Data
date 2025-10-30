@@ -1,4 +1,5 @@
 import { PRICE_MULTIPLIERS } from '../config/constants';
+import { getCurrencyEmoji } from './emoji-helper';
 
 /**
  * Format a price value with appropriate suffix (k, m, b)
@@ -17,10 +18,43 @@ export function formatPrice(price: number, decimals: number = 2): string {
 }
 
 /**
- * Format a chaos price with "c" suffix
+ * Format a chaos price with chaos emoji
  */
 export function formatChaosPrice(price: number, decimals: number = 2): string {
-  return `${formatPrice(price, decimals)}c`;
+  const chaosEmoji = getCurrencyEmoji('Chaos Orb');
+  return `${formatPrice(price, decimals)}${chaosEmoji}`;
+}
+
+/**
+ * Smart price formatter that switches to Exalted Orbs for very cheap items
+ * For items < 0.01 chaos, displays as "X per Ex" instead
+ */
+export function formatSmartPrice(chaosPrice: number, exaltedPrice?: number): string {
+  const chaosEmoji = getCurrencyEmoji('Chaos Orb');
+  const exaltedEmoji = getCurrencyEmoji('Exalted Orb');
+
+  // If price is >= 0.01 chaos or we don't have exalted price, use normal chaos formatting
+  if (chaosPrice >= 0.01 || !exaltedPrice || exaltedPrice === 0) {
+    return `${formatPrice(chaosPrice, 2)}${chaosEmoji}`;
+  }
+
+  // For very cheap items, show how many you get per Exalted
+  // Formula: (exaltedPrice in chaos) / (item price in chaos) = items per exalted
+  const itemsPerExalted = exaltedPrice / chaosPrice;
+
+  // Format with appropriate precision
+  let formattedAmount: string;
+  if (itemsPerExalted >= 1000) {
+    formattedAmount = formatPrice(itemsPerExalted, 1);
+  } else if (itemsPerExalted >= 100) {
+    formattedAmount = itemsPerExalted.toFixed(0);
+  } else if (itemsPerExalted >= 10) {
+    formattedAmount = itemsPerExalted.toFixed(1);
+  } else {
+    formattedAmount = itemsPerExalted.toFixed(2);
+  }
+
+  return `${formattedAmount} per ${exaltedEmoji}`;
 }
 
 /**

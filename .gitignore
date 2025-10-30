@@ -38,3 +38,6 @@ coverage/
 # Temporary files
 *.tmp
 *.temp
+
+# API test files (development/research only)
+tests/

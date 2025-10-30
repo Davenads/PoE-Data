@@ -5,11 +5,12 @@ import { config } from '../config/config';
 import { rateLimiter } from './rate-limiter';
 import { redisStore } from './redis-store';
 import { getLeagueUrlSlug } from '../utils/validators';
-import { API_HEADERS, CURRENCY_KEYWORDS, PUPPETEER_CONFIG } from '../config/constants';
+import { API_HEADERS, CURRENCY_KEYWORDS, PUPPETEER_CONFIG, POE2_API_LEAGUE_NAMES } from '../config/constants';
 import type {
   CurrencyData,
   CurrencyOverviewResponse,
-  ScrapedCurrencyData
+  ScrapedCurrencyData,
+  Poe2ApiResponse
 } from '../models/types';
 
 /**
@@ -28,22 +29,34 @@ export class PoeNinjaClient {
   }
 
   /**
-   * Fetch currency data (tries API first, falls back to scraping)
+   * Fetch currency data (tries PoE2 API, then PoE1 API, then falls back to scraping)
    */
   async fetchCurrencyData(league: string): Promise<CurrencyData[]> {
-    // Try API first
+    // Try PoE2 Direct API first (FASTEST - ~200ms)
     try {
-      logger.info(`Attempting API fetch for league: ${league}`);
-      const data = await this.fetchFromAPI(league);
+      logger.info(`Attempting PoE2 direct API fetch for league: ${league}`);
+      const data = await this.fetchFromPoe2Api(league);
       if (data && data.length > 0) {
-        logger.info(`Successfully fetched ${data.length} currencies from API`);
+        logger.info(`✅ Successfully fetched ${data.length} currencies from PoE2 API (~200ms)`);
         return data;
       }
     } catch (error) {
-      logger.warn('API fetch failed, falling back to browser scraping:', error);
+      logger.debug('PoE2 API fetch failed (expected for PoE1 leagues):', error);
     }
 
-    // Fall back to browser scraping
+    // Try PoE1 API (for PoE1 leagues)
+    try {
+      logger.info(`Attempting PoE1 API fetch for league: ${league}`);
+      const data = await this.fetchFromAPI(league);
+      if (data && data.length > 0) {
+        logger.info(`Successfully fetched ${data.length} currencies from PoE1 API`);
+        return data;
+      }
+    } catch (error) {
+      logger.warn('PoE1 API fetch failed, falling back to browser scraping:', error);
+    }
+
+    // Fall back to browser scraping (SLOWEST - ~5-10s)
     try {
       logger.info(`Attempting browser scrape for league: ${league}`);
       const data = await this.scrapeFromBrowser(league);
@@ -53,6 +66,107 @@ export class PoeNinjaClient {
       logger.error('Browser scraping failed:', error);
       throw new Error(`Failed to fetch data for league ${league}: ${error}`);
     }
+  }
+
+  /**
+   * Fetch data from PoE2 Direct API (FASTEST - ~200ms)
+   * This is an undocumented API discovered via network interception
+   */
+  private async fetchFromPoe2Api(league: string): Promise<CurrencyData[]> {
+    const endpoint = 'poeninja:poe2api';
+
+    // Map display league name to API league name
+    const apiLeagueName = POE2_API_LEAGUE_NAMES[league] || league;
+
+    return await rateLimiter.waitAndExecute(endpoint, async () => {
+      try {
+        const response = await this.axiosClient.get<Poe2ApiResponse>(
+          'https://poe.ninja/poe2/api/economy/currencyexchange/overview',
+          {
+            params: {
+              leagueName: apiLeagueName,
+              overviewName: 'Currency'
+            },
+            baseURL: '' // Override baseURL for this specific request
+          }
+        );
+
+        if (!response.data || !response.data.lines || !response.data.items) {
+          throw new Error('Invalid PoE2 API response structure');
+        }
+
+        // Convert PoE2 API format to our CurrencyData format
+        return this.convertPoe2ApiData(response.data);
+      } catch (error: any) {
+        if (error.response?.status === 404) {
+          logger.debug(`League ${league} not found in PoE2 API (may be PoE1 league)`);
+          return [];
+        }
+        throw error;
+      }
+    });
+  }
+
+  /**
+   * Convert PoE2 API response to CurrencyData format
+   *
+   * IMPORTANT: PoE2 API returns prices relative to Divine Orbs, not Chaos Orbs!
+   * primaryValue represents "how many of this currency per 1 Divine"
+   *
+   * Example:
+   * - Chaos Orb: primaryValue = 28.94 means "28.94 Chaos per 1 Divine"
+   * - Divine Orb: primaryValue = 1 means "1 Divine per 1 Divine"
+   * - Exalted Orb: primaryValue = 6.18 means "6.18 Exalted per 1 Divine"
+   *
+   * To convert to "Chaos per item":
+   * - chaosPerItem = (Chaos per Divine) / (Items per Divine)
+   */
+  private convertPoe2ApiData(apiData: Poe2ApiResponse): CurrencyData[] {
+    // Create a map of currency IDs to names
+    const itemMap = new Map(apiData.items.map(item => [item.id, item]));
+
+    // Find Chaos Orb to get the Divine-to-Chaos conversion rate
+    const chaosOrbLine = apiData.lines.find(line => {
+      const item = itemMap.get(line.id);
+      return item?.name.toLowerCase() === 'chaos orb';
+    });
+
+    // Chaos Orb's primaryValue = "Divines per Chaos"
+    // To get "Chaos per Divine", we need to invert it
+    // If not found, assume Divine = 180 Chaos (approximate PoE2 standard rate)
+    const chaosOrbPrimaryValue = chaosOrbLine?.primaryValue || (1 / 180);
+    const chaosPerDivine = 1 / chaosOrbPrimaryValue;
+
+    logger.debug(`Divine-to-Chaos conversion rate: 1 Divine = ${chaosPerDivine.toFixed(2)} Chaos (Chaos Orb primaryValue = ${chaosOrbPrimaryValue})`);
+
+    return apiData.lines.map(line => {
+      const item = itemMap.get(line.id);
+      const currencyName = item?.name || line.id;
+
+      // Convert Divine-based price to Chaos-based price
+      // primaryValue represents "Divines per item"
+      // Formula: (item price in divines) / (divines per chaos) = Chaos per Item
+      const chaosEquivalent = line.primaryValue / chaosOrbPrimaryValue;
+
+      return {
+        currencyTypeName: currencyName,
+        chaosEquivalent: chaosEquivalent,
+        paySparkLine: {
+          data: line.sparkline?.data || [],
+          totalChange: line.sparkline?.totalChange || 0
+        },
+        receiveSparkLine: {
+          data: line.sparkline?.data || [],
+          totalChange: line.sparkline?.totalChange || 0
+        },
+        pay: {
+          count: 0,
+          value: chaosEquivalent,
+          listing_count: Math.round(line.volumePrimaryValue || 0),
+          sample_time_utc: new Date().toISOString()
+        }
+      };
+    });
   }
 
   /**
@@ -152,8 +266,9 @@ export class PoeNinjaClient {
               const cells = row.querySelectorAll('td');
               if (cells.length < 2) return;
 
-              // Debug: Log all cell contents for first few rows
-              if (rowIndex < 3) {
+              // Debug: Log all cell contents for first few rows and specific currencies
+              const shouldDebug = rowIndex < 3;
+              if (shouldDebug) {
                 const cellContents = Array.from(cells).map((cell, i) => `[${i}]: "${cell.textContent?.trim()}"`);
                 console.log(`[Puppeteer Debug] Row ${rowIndex} cells:`, cellContents.join(' | '));
               }
@@ -179,30 +294,64 @@ export class PoeNinjaClient {
 
               if (!currencyName) return;
 
-              // Parse chaos value - look AFTER the name column, specifically for price pattern
-              // Price is typically in the next 1-2 columns after the name
-              for (let i = nameColumnIndex + 1; i < Math.min(nameColumnIndex + 4, cells.length); i++) {
-                const text = cells[i].textContent?.trim() || '';
+              // Debug specific currencies
+              const debugCurrencies = ['Exalted Orb', 'Divine Orb', 'Chaos Orb'];
+              const isDebugCurrency = debugCurrencies.some(dc => currencyName.includes(dc));
+              if (isDebugCurrency) {
+                const cellContents = Array.from(cells).map((cell, i) => `[${i}]: "${cell.textContent?.trim()}"`);
+                console.log(`[Puppeteer Debug] ${currencyName} cells:`, cellContents.join(' | '));
+              }
 
-                // Skip empty cells and cells with % (those are changes, not prices)
-                if (!text || text.includes('%')) continue;
+              // Parse chaos value - poe.ninja shows prices in two ways:
+              // - Expensive items (>1c): Column 1 shows "chaos per item"
+              // - Cheap items (<1c): Column 3 shows "items per chaos" (needs inverse)
+              // We check both columns and use the appropriate value
+              let col1Value = 0;
+              let col3Value = 0;
 
-                // Look for chaos value pattern (number with optional decimal and k/m/b suffix)
-                // Must match the pattern: digits with optional decimal, followed by optional multiplier
+              // Parse column 1 (after name)
+              if (nameColumnIndex + 1 < cells.length) {
+                const text = cells[nameColumnIndex + 1].textContent?.trim() || '';
                 const priceMatch = text.match(/^([\d.]+)([kmb])?$/i);
-                if (priceMatch && !chaosValue) {
+                if (priceMatch) {
                   let value = parseFloat(priceMatch[1]);
                   const suffix = priceMatch[2]?.toLowerCase();
-
                   if (suffix === 'k') value *= 1000;
                   if (suffix === 'm') value *= 1000000;
                   if (suffix === 'b') value *= 1000000000;
+                  col1Value = value;
+                }
+              }
 
-                  chaosValue = value;
-                  if (rowIndex < 3) {
-                    console.log(`[Puppeteer Debug] Found price in column ${i}: ${text} = ${value}c`);
-                  }
-                  break; // Found the price, stop looking
+              // Parse column 3 (2 columns after name)
+              if (nameColumnIndex + 3 < cells.length) {
+                const text = cells[nameColumnIndex + 3].textContent?.trim() || '';
+                const priceMatch = text.match(/^([\d.]+)([kmb])?$/i);
+                if (priceMatch) {
+                  let value = parseFloat(priceMatch[1]);
+                  const suffix = priceMatch[2]?.toLowerCase();
+                  if (suffix === 'k') value *= 1000;
+                  if (suffix === 'm') value *= 1000000;
+                  if (suffix === 'b') value *= 1000000000;
+                  col3Value = value;
+                }
+              }
+
+              // Determine which value to use:
+              // If col3 > col1, it means col3 shows "items per chaos" (e.g., 60 ex per 1c)
+              // In this case, we need to invert: chaosValue = 1 / col3Value
+              // Otherwise, col1 shows "chaos per item" directly
+              if (col3Value > col1Value && col3Value > 1) {
+                // Cheap item: invert the ratio
+                chaosValue = 1 / col3Value;
+                if (isDebugCurrency) {
+                  console.log(`[Puppeteer Debug] ${currencyName} - Cheap item detected. Col3=${col3Value} items/chaos → ${chaosValue.toFixed(4)}c per item`);
+                }
+              } else if (col1Value > 0) {
+                // Expensive item: use col1 directly
+                chaosValue = col1Value;
+                if (isDebugCurrency) {
+                  console.log(`[Puppeteer Debug] ${currencyName} - Expensive item detected. Col1=${col1Value}c per item`);
                 }
               }
 
