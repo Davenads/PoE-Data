@@ -1,5 +1,7 @@
 #debug
 /debug-screenshots
+/.claude
+message-to-poeninja-dev.md
 
 # Dependencies
 node_modules/

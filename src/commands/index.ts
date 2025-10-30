@@ -16,7 +16,9 @@ async function discoverCommands(): Promise<Command[]> {
     const commandFiles = readdirSync(commandsPath).filter(file => {
       // Load .ts files in development or .js files in production
       // Skip index.ts/index.js to avoid circular imports
+      // Skip .d.ts declaration files (produced by TypeScript compilation)
       return (file.endsWith('.ts') || file.endsWith('.js')) &&
+             !file.endsWith('.d.ts') &&
              file !== 'index.ts' &&
              file !== 'index.js';
     });

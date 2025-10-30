@@ -5,7 +5,7 @@ import { config } from '../config/config';
 import { rateLimiter } from './rate-limiter';
 import { redisStore } from './redis-store';
 import { getLeagueUrlSlug } from '../utils/validators';
-import { API_HEADERS, CURRENCY_KEYWORDS, PUPPETEER_CONFIG, POE2_API_LEAGUE_NAMES } from '../config/constants';
+import { API_HEADERS, CURRENCY_KEYWORDS, PUPPETEER_CONFIG, POE2_API_LEAGUE_NAMES, API_FLAGS } from '../config/constants';
 import type {
   CurrencyData,
   CurrencyOverviewResponse,
@@ -32,16 +32,20 @@ export class PoeNinjaClient {
    * Fetch currency data (tries PoE2 API, then PoE1 API, then falls back to scraping)
    */
   async fetchCurrencyData(league: string): Promise<CurrencyData[]> {
-    // Try PoE2 Direct API first (FASTEST - ~200ms)
-    try {
-      logger.info(`Attempting PoE2 direct API fetch for league: ${league}`);
-      const data = await this.fetchFromPoe2Api(league);
-      if (data && data.length > 0) {
-        logger.info(`✅ Successfully fetched ${data.length} currencies from PoE2 API (~200ms)`);
-        return data;
+    // Try PoE2 Direct API first (FASTEST - ~200ms) - if enabled
+    if (API_FLAGS.ENABLE_POE2_API) {
+      try {
+        logger.info(`Attempting PoE2 direct API fetch for league: ${league}`);
+        const data = await this.fetchFromPoe2Api(league);
+        if (data && data.length > 0) {
+          logger.info(`✅ Successfully fetched ${data.length} currencies from PoE2 API (~200ms)`);
+          return data;
+        }
+      } catch (error) {
+        logger.debug('PoE2 API fetch failed (expected for PoE1 leagues):', error);
       }
-    } catch (error) {
-      logger.debug('PoE2 API fetch failed (expected for PoE1 leagues):', error);
+    } else {
+      logger.debug('PoE2 API disabled (deprecated as of October 2025)');
     }
 
     // Try PoE1 API (for PoE1 leagues)
@@ -99,9 +103,10 @@ export class PoeNinjaClient {
         return this.convertPoe2ApiData(response.data);
       } catch (error: any) {
         if (error.response?.status === 404) {
-          logger.debug(`League ${league} not found in PoE2 API (may be PoE1 league)`);
+          logger.warn(`League ${league} (API name: ${apiLeagueName}) not found in PoE2 API - falling back to scraping`);
           return [];
         }
+        logger.error(`PoE2 API error for ${league}:`, error);
         throw error;
       }
     });

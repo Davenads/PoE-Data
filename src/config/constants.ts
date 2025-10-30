@@ -24,7 +24,7 @@ export const LEAGUE_URL_SLUGS: Record<string, string> = {
 // League name to API name mapping for PoE2 direct API
 // The PoE2 API uses different league names than the display names
 export const POE2_API_LEAGUE_NAMES: Record<string, string> = {
-  'Dawn': 'Dawn of the Hunt',
+  'Dawn': 'Dawn',  // Try just "Dawn" instead of "Dawn of the Hunt"
   'Standard': 'Standard',
   'Rise of the Abyssal': 'Rise of the Abyssal',
   'abyss': 'Rise of the Abyssal'
@@ -148,6 +148,14 @@ export const SCHEDULED_TASKS = {
   PRICE_FETCH_CRON: '5 * * * *',  // Run at :05 past every hour
   PRICE_FETCH_ENABLED: true,       // Toggle scheduled fetching
   FETCH_ALL_CURRENCIES: true       // If true, fetch all currencies (1 API call); if false, fetch only SCHEDULED_FETCH_CURRENCIES (15 API calls)
+} as const;
+
+// API feature flags
+export const API_FLAGS = {
+  // PoE2 API disabled due to IP block from rate limit violations (Oct 30, 2025)
+  // Returns 404 for all leagues - likely temporary ban lasting 24-48 hours
+  // Try re-enabling after ban period expires
+  ENABLE_POE2_API: false
 } as const;
 
 // Cache TTL values (in seconds)
