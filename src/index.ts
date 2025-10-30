@@ -6,6 +6,7 @@ import { loadCommands } from './commands';
 import { handleInteraction } from './events/interactionCreate';
 import { handleReady } from './events/ready';
 import { redisStore } from './services/redis-store';
+import { scheduledTasks } from './services/scheduled-tasks';
 
 async function start() {
   try {
@@ -18,6 +19,10 @@ async function start() {
     // Load commands
     await loadCommands();
     logger.info(`✓ Loaded ${client.commands.size} commands`);
+
+    // Start scheduled tasks (hourly price fetching)
+    scheduledTasks.start();
+    logger.info('✓ Scheduled tasks initialized');
 
     // Register event handlers
     client.once(Events.ClientReady, handleReady);

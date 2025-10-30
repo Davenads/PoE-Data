@@ -21,6 +21,15 @@ export const LEAGUE_URL_SLUGS: Record<string, string> = {
   'Hardcore': 'hardcore'
 } as const;
 
+// League name to API name mapping for PoE2 direct API
+// The PoE2 API uses different league names than the display names
+export const POE2_API_LEAGUE_NAMES: Record<string, string> = {
+  'Dawn': 'Dawn of the Hunt',
+  'Standard': 'Standard',
+  'Rise of the Abyssal': 'Rise of the Abyssal',
+  'abyss': 'Rise of the Abyssal'
+} as const;
+
 // Hardcoded PoE2 currency list for fast autocomplete
 // Organized by category for easy maintenance
 export const POE2_CURRENCIES = [
@@ -114,6 +123,32 @@ export const POE2_CURRENCIES = [
 ] as const;
 
 export type POE2Currency = typeof POE2_CURRENCIES[number];
+
+// Popular currencies to fetch in scheduled task (high-volume, frequently queried)
+export const SCHEDULED_FETCH_CURRENCIES = [
+  'Mirror of Kalandra',
+  'Divine Orb',
+  'Exalted Orb',
+  'Chaos Orb',
+  'Regal Orb',
+  'Orb of Alchemy',
+  'Orb of Annulment',
+  'Vaal Orb',
+  'Gemcutter\'s Prism',
+  'Orb of Fusing',
+  'Chromatic Orb',
+  'Blessed Orb',
+  'Orb of Scouring',
+  'Orb of Regret',
+  'Jeweller\'s Orb'
+] as const;
+
+// Scheduled task configuration
+export const SCHEDULED_TASKS = {
+  PRICE_FETCH_CRON: '5 * * * *',  // Run at :05 past every hour
+  PRICE_FETCH_ENABLED: true,       // Toggle scheduled fetching
+  FETCH_ALL_CURRENCIES: false      // If true, fetch all currencies; if false, fetch only SCHEDULED_FETCH_CURRENCIES
+} as const;
 
 // Cache TTL values (in seconds)
 // Note: GGG provides currency data in hourly chunks (max 1 hour delay)
@@ -225,10 +260,20 @@ export const VOLATILITY_THRESHOLDS = {
   LOW: 5
 } as const;
 
+// Discord limits
+export const DISCORD_LIMITS = {
+  EMBED_FIELD_VALUE_MAX: 1024,
+  EMBED_DESCRIPTION_MAX: 4096,
+  EMBED_TITLE_MAX: 256,
+  EMBED_TOTAL_MAX: 6000,
+  INTERACTION_TIMEOUT: 900000 // 15 minutes in ms (Discord max)
+} as const;
+
 // Pagination limits
 export const PAGINATION = {
   MAX_MOVERS: 20,
   DEFAULT_MOVERS: 10,
+  MOVERS_PER_PAGE: 5, // Number of movers to show per page in paginated view
   MAX_SEARCH_RESULTS: 25,
   AUTOCOMPLETE_LIMIT: 25
 } as const;

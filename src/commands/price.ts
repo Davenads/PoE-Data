@@ -5,6 +5,7 @@ import { config } from '../config/config';
 import { logger } from '../utils/logger';
 import { COMMAND_COOLDOWNS, ERROR_MESSAGES, POE2_CURRENCIES } from '../config/constants';
 import { isValidLeague, normalizeLeagueName, sanitizeInput } from '../utils/validators';
+import { getMultiTimeframeChanges } from '../utils/price-history-calculator';
 import type { Command } from '../models/command.interface';
 
 const command: Command = {
@@ -65,8 +66,20 @@ const command: Command = {
         return;
       }
 
+      // Calculate 12h and 24h price changes from Redis history
+      logger.info(`[price] Calculating timeframe changes for ${currency}`);
+      const { change12h, change24h } = await getMultiTimeframeChanges(
+        league,
+        currency,
+        currencyData.chaosEquivalent
+      );
+
+      if (change12h === null && change24h === null) {
+        logger.info(`[price] No historical data available for ${currency} - showing 7d change only`);
+      }
+
       // Create and send embed
-      const embed = embedBuilder.createPriceEmbed(currencyData, league);
+      const embed = embedBuilder.createPriceEmbed(currencyData, league, change12h, change24h);
       await interaction.editReply({ embeds: [embed] });
 
     } catch (error) {

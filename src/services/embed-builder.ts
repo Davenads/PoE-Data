@@ -7,8 +7,10 @@ import {
   formatRelativeTime,
   getPriceChangeEmoji,
   getSentimentEmoji,
-  formatPrice
+  formatPrice,
+  formatSmartPrice
 } from '../utils/formatters';
+import { formatCurrencyWithEmoji } from '../utils/emoji-helper';
 import type {
   CurrencyData,
   MoverData,
@@ -23,13 +25,24 @@ export class EmbedBuilderService {
   /**
    * Create embed for currency price
    */
-  createPriceEmbed(currency: CurrencyData, league: string): EmbedBuilder {
-    const change = currency.paySparkLine.totalChange;
-    const emoji = getPriceChangeEmoji(change);
-    const color = change > 0 ? EMBED_COLORS.BULLISH : change < 0 ? EMBED_COLORS.BEARISH : EMBED_COLORS.NEUTRAL;
+  createPriceEmbed(
+    currency: CurrencyData,
+    league: string,
+    change12h?: number | null,
+    change24h?: number | null
+  ): EmbedBuilder {
+    const change7d = currency.paySparkLine.totalChange;
+    const change7dEmoji = getPriceChangeEmoji(change7d);
+
+    // Use 24h change for color if available, otherwise use 7d
+    const primaryChange = change24h !== null && change24h !== undefined ? change24h : change7d;
+    const color = primaryChange > 0 ? EMBED_COLORS.BULLISH : primaryChange < 0 ? EMBED_COLORS.BEARISH : EMBED_COLORS.NEUTRAL;
+
+    // Format currency name with emoji (no trend emoji in title)
+    const currencyWithEmoji = formatCurrencyWithEmoji(currency.currencyTypeName);
 
     const embed = new EmbedBuilder()
-      .setTitle(`${emoji} ${currency.currencyTypeName}`)
+      .setTitle(`${currencyWithEmoji}`)
       .setDescription(`**${league}** League`)
       .setColor(color)
       .addFields(
@@ -39,8 +52,22 @@ export class EmbedBuilderService {
           inline: true
         },
         {
-          name: '📈 24h Change',
-          value: `${formatPercentChange(change)} ${emoji}`,
+          name: '📈 12h Change',
+          value: change12h !== null && change12h !== undefined
+            ? `${formatPercentChange(change12h)} ${getPriceChangeEmoji(change12h)}`
+            : 'N/A',
+          inline: true
+        },
+        {
+          name: '📊 24h Change',
+          value: change24h !== null && change24h !== undefined
+            ? `${formatPercentChange(change24h)} ${getPriceChangeEmoji(change24h)}`
+            : 'N/A',
+          inline: true
+        },
+        {
+          name: '📅 7d Change',
+          value: `${formatPercentChange(change7d)} ${change7dEmoji}`,
           inline: true
         }
       )
@@ -65,6 +92,11 @@ export class EmbedBuilderService {
       ? currency1.currencyTypeName
       : currency2.currencyTypeName;
 
+    // Format currency names with emojis
+    const currency1WithEmoji = formatCurrencyWithEmoji(currency1.currencyTypeName);
+    const currency2WithEmoji = formatCurrencyWithEmoji(currency2.currencyTypeName);
+    const betterPerformerWithEmoji = formatCurrencyWithEmoji(betterPerformer);
+
     // Helper function to format ratio - use k/m/b notation for large numbers, otherwise fixed decimals
     const formatRatio = (ratio: number): string => {
       if (ratio >= 100) {
@@ -82,19 +114,20 @@ export class EmbedBuilderService {
       }
     };
 
-    // Format exchange rates based on which makes more sense to display
+    // Format exchange rates - show how many of currency2 you get for 1 of currency1
+    // The ratio is based on chaos values, so we just show the numeric ratio
     let exchangeRateText: string;
     if (ratio1to2 >= 1) {
       // If ratio is >= 1, show currency1 -> currency2
-      exchangeRateText = `1 ${currency1.currencyTypeName} = **${formatRatio(ratio1to2)}** ${currency2.currencyTypeName}`;
+      exchangeRateText = `1 ${currency1WithEmoji} = **${formatRatio(ratio1to2)}** ${currency2.currencyTypeName}`;
       if (ratio2to1 >= 0.001) {
-        exchangeRateText += `\n1 ${currency2.currencyTypeName} = **${formatRatio(ratio2to1)}** ${currency1.currencyTypeName}`;
+        exchangeRateText += `\n1 ${currency2WithEmoji} = **${formatRatio(ratio2to1)}** ${currency1.currencyTypeName}`;
       }
     } else {
       // If ratio is < 1, flip it for better readability
-      exchangeRateText = `1 ${currency2.currencyTypeName} = **${formatRatio(ratio2to1)}** ${currency1.currencyTypeName}`;
+      exchangeRateText = `1 ${currency2WithEmoji} = **${formatRatio(ratio2to1)}** ${currency1.currencyTypeName}`;
       if (ratio1to2 >= 0.001) {
-        exchangeRateText += `\n1 ${currency1.currencyTypeName} = **${formatRatio(ratio1to2)}** ${currency2.currencyTypeName}`;
+        exchangeRateText += `\n1 ${currency1WithEmoji} = **${formatRatio(ratio1to2)}** ${currency2.currencyTypeName}`;
       }
     }
 
@@ -104,7 +137,7 @@ export class EmbedBuilderService {
       .setColor(EMBED_COLORS.INFO)
       .addFields(
         {
-          name: `${currency1.currencyTypeName}`,
+          name: `${currency1WithEmoji}`,
           value: `${formatChaosPrice(currency1.chaosEquivalent)}\n${formatPercentChange(currency1.paySparkLine.totalChange)}`,
           inline: true
         },
@@ -114,7 +147,7 @@ export class EmbedBuilderService {
           inline: true
         },
         {
-          name: `${currency2.currencyTypeName}`,
+          name: `${currency2WithEmoji}`,
           value: `${formatChaosPrice(currency2.chaosEquivalent)}\n${formatPercentChange(currency2.paySparkLine.totalChange)}`,
           inline: true
         },
@@ -125,7 +158,7 @@ export class EmbedBuilderService {
         },
         {
           name: '📊 Better Performer (24h)',
-          value: `**${betterPerformer}**`,
+          value: `**${betterPerformerWithEmoji}**`,
           inline: false
         }
       )
@@ -135,50 +168,51 @@ export class EmbedBuilderService {
   }
 
   /**
-   * Create embed for market movers
+   * Create embed for market movers (paginated version)
    */
   createMoversEmbed(
     gainers: MoverData[],
     losers: MoverData[],
-    league: string
+    league: string,
+    pageIndicator?: string,
+    startIndex: number = 0,
+    exaltedPrice?: number
   ): EmbedBuilder {
     const embed = new EmbedBuilder()
       .setTitle(`🚀 Market Movers - ${league}`)
       .setColor(EMBED_COLORS.INFO)
       .setTimestamp();
 
-    if (gainers.length > 0) {
-      const gainersText = gainers
+    // Helper function to format movers
+    const formatMovers = (movers: MoverData[], offset: number): string => {
+      return movers
         .map((m, i) => {
-          const emoji = getPriceChangeEmoji(m.changePercent);
-          // Debug: log the actual values being formatted
-          if (i === 0) {
-            console.log(`[Embed Debug] First gainer: ${m.currencyTypeName}, prev=${m.previousPrice}, curr=${m.currentPrice}, formatted prev=${formatChaosPrice(m.previousPrice)}, formatted curr=${formatChaosPrice(m.currentPrice)}`);
-          }
-          return `${i + 1}. **${m.currencyTypeName}**: ${formatPercentChange(m.changePercent)} ${emoji}\n   ${formatChaosPrice(m.previousPrice)} → ${formatChaosPrice(m.currentPrice)}`;
+          const changeEmoji = getPriceChangeEmoji(m.changePercent);
+          const currencyWithEmoji = formatCurrencyWithEmoji(m.currencyTypeName);
+          return `${offset + i + 1}. **${currencyWithEmoji}**: ${formatPercentChange(m.changePercent)} ${changeEmoji}\n   ${formatSmartPrice(m.previousPrice, exaltedPrice)} → ${formatSmartPrice(m.currentPrice, exaltedPrice)}`;
         })
         .join('\n\n');
+    };
 
+    if (gainers.length > 0) {
       embed.addFields({
         name: '📈 Top Gainers',
-        value: gainersText,
+        value: formatMovers(gainers, startIndex),
         inline: false
       });
     }
 
     if (losers.length > 0) {
-      const losersText = losers
-        .map((m, i) => {
-          const emoji = getPriceChangeEmoji(m.changePercent);
-          return `${i + 1}. **${m.currencyTypeName}**: ${formatPercentChange(m.changePercent)} ${emoji}\n   ${formatChaosPrice(m.previousPrice)} → ${formatChaosPrice(m.currentPrice)}`;
-        })
-        .join('\n\n');
-
       embed.addFields({
         name: '📉 Top Losers',
-        value: losersText,
+        value: formatMovers(losers, startIndex + gainers.length),
         inline: false
       });
+    }
+
+    // Add page indicator if provided
+    if (pageIndicator) {
+      embed.setFooter({ text: pageIndicator });
     }
 
     return embed;
@@ -205,8 +239,9 @@ export class EmbedBuilderService {
     const resultsText = results
       .slice(0, 10) // Limit to 10 results
       .map((c, i) => {
-        const emoji = getPriceChangeEmoji(c.paySparkLine.totalChange);
-        return `${i + 1}. **${c.currencyTypeName}** - ${formatChaosPrice(c.chaosEquivalent)} (${formatPercentChange(c.paySparkLine.totalChange)} ${emoji})`;
+        const changeEmoji = getPriceChangeEmoji(c.paySparkLine.totalChange);
+        const currencyWithEmoji = formatCurrencyWithEmoji(c.currencyTypeName);
+        return `${i + 1}. **${currencyWithEmoji}** - ${formatChaosPrice(c.chaosEquivalent)} (${formatPercentChange(c.paySparkLine.totalChange)} ${changeEmoji})`;
       })
       .join('\n');
 
@@ -248,6 +283,8 @@ export class EmbedBuilderService {
    */
   createTrendsEmbed(trends: MarketTrends): EmbedBuilder {
     const sentimentEmoji = getSentimentEmoji(trends.sentiment);
+    const mostActiveCurrencyWithEmoji = formatCurrencyWithEmoji(trends.mostActive.currency);
+    const mostValuableCurrencyWithEmoji = formatCurrencyWithEmoji(trends.mostValuable.currency);
 
     const embed = new EmbedBuilder()
       .setTitle(`📊 Market Trends - ${trends.league}`)
@@ -259,12 +296,12 @@ export class EmbedBuilderService {
       .addFields(
         {
           name: '🔥 Most Active (24h)',
-          value: `**${trends.mostActive.currency}**\n${formatNumber(trends.mostActive.volume)} volume`,
+          value: `**${mostActiveCurrencyWithEmoji}**\n${formatNumber(trends.mostActive.volume)} volume`,
           inline: true
         },
         {
           name: '💎 Most Valuable',
-          value: `**${trends.mostValuable.currency}**\n${formatChaosPrice(trends.mostValuable.price)}`,
+          value: `**${mostValuableCurrencyWithEmoji}**\n${formatChaosPrice(trends.mostValuable.price)}`,
           inline: true
         },
         {

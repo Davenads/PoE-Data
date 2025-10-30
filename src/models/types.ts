@@ -45,6 +45,35 @@ export interface ScrapedCurrencyData {
   changePercent?: number;
 }
 
+// PoE2 Direct API response structure (different from PoE1 API)
+export interface Poe2ApiResponse {
+  core: {
+    version: string;
+    timestamp: number;
+  };
+  lines: Poe2CurrencyLine[];
+  items: Poe2CurrencyItem[];
+}
+
+export interface Poe2CurrencyLine {
+  id: string;
+  primaryValue: number;
+  volumePrimaryValue?: number;
+  secondaryValue?: number;
+  volumeSecondaryValue?: number;
+  sparkline?: {
+    totalChange: number;
+    data: number[];
+  };
+}
+
+export interface Poe2CurrencyItem {
+  id: string;
+  name: string;
+  icon?: string;
+  tradeId?: string;
+}
+
 // Price history entry
 export interface PriceHistoryEntry {
   timestamp: number;
@@ -68,6 +97,7 @@ export interface CurrencyAnalytics {
   league: string;
   sentiment: 'very_bullish' | 'bullish' | 'neutral' | 'bearish' | 'very_bearish';
   volatility: 'high' | 'medium' | 'low';
+  priceChange12h?: number;
   priceChange24h: number;
   priceChange7d?: number;
   averagePrice24h: number;
