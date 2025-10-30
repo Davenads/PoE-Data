@@ -175,7 +175,7 @@ export class ScheduledTaskService {
         league,
         currency.currencyTypeName,
         currency.chaosEquivalent,
-        currency.pay.listing_count
+        currency.pay?.listing_count || 0
       );
 
       logger.debug(

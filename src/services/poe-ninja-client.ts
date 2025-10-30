@@ -479,7 +479,7 @@ export class PoeNinjaClient {
         league,
         currencyName,
         currency.chaosEquivalent,
-        currency.pay.listing_count
+        currency.pay?.listing_count || 0
       );
     }
 

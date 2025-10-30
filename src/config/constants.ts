@@ -147,7 +147,7 @@ export const SCHEDULED_FETCH_CURRENCIES = [
 export const SCHEDULED_TASKS = {
   PRICE_FETCH_CRON: '5 * * * *',  // Run at :05 past every hour
   PRICE_FETCH_ENABLED: true,       // Toggle scheduled fetching
-  FETCH_ALL_CURRENCIES: false      // If true, fetch all currencies; if false, fetch only SCHEDULED_FETCH_CURRENCIES
+  FETCH_ALL_CURRENCIES: true       // If true, fetch all currencies (1 API call); if false, fetch only SCHEDULED_FETCH_CURRENCIES (15 API calls)
 } as const;
 
 // Cache TTL values (in seconds)
