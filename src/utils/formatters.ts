@@ -1,5 +1,6 @@
 import { PRICE_MULTIPLIERS } from '../config/constants';
 import { getCurrencyEmoji } from './emoji-helper';
+import { EMOJIS } from '../config/emojis';
 
 /**
  * Format a price value with appropriate suffix (k, m, b)
@@ -137,13 +138,13 @@ export function truncate(text: string, maxLength: number): string {
  * Get emoji for price change direction
  */
 export function getPriceChangeEmoji(change: number): string {
-  if (change > 10) return '🚀';
-  if (change > 5) return '📈';
-  if (change > 0) return '⬆️';
+  if (change > 10) return EMOJIS['uptrend3'];
+  if (change > 5) return EMOJIS['uptrend2'];
+  if (change > 0) return EMOJIS['uptrend1'];
   if (change === 0) return '➡️';
-  if (change > -5) return '⬇️';
-  if (change > -10) return '📉';
-  return '💥';
+  if (change > -5) return EMOJIS['downtrend1'];
+  if (change > -10) return EMOJIS['downtrend2'];
+  return EMOJIS['downtrend3'];
 }
 
 /**
@@ -152,15 +153,15 @@ export function getPriceChangeEmoji(change: number): string {
 export function getSentimentEmoji(sentiment: string): string {
   switch (sentiment.toLowerCase()) {
     case 'very_bullish':
-      return '🚀';
+      return EMOJIS['uptrend3'];
     case 'bullish':
-      return '📈';
+      return EMOJIS['uptrend2'];
     case 'neutral':
       return '➡️';
     case 'bearish':
-      return '📉';
+      return EMOJIS['downtrend2'];
     case 'very_bearish':
-      return '💥';
+      return EMOJIS['downtrend3'];
     default:
       return '❓';
   }

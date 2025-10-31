@@ -133,4 +133,11 @@ export const EMOJIS: Readonly<EmojiMap> = {
   "wisdom": "<:scroll_of_wisdom:1356181080993960088>",
   "xopecs-soul-core-of-power": "<:xopecssoulcoreofpower:1424148931839004702>",
   "xophs-catalyst": "<:Xophs_Catalyst:1356334426149093386>",
+  // Trend indicators
+  "uptrend1": "<:uptrend1:1433608654355169341>",
+  "uptrend2": "<:uptrend2:1433608697900306562>",
+  "uptrend3": "<:uptrend3:1433608715197485066>",
+  "downtrend1": "<:downtrend1:1433608732759031939>",
+  "downtrend2": "<:downtrend2:1433608751889387550>",
+  "downtrend3": "<:downtrend3:1433608772185755811>",
 } as const;
