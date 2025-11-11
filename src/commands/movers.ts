@@ -27,6 +27,19 @@ const command: Command = {
     )
     .addStringOption(option =>
       option
+        .setName('tier')
+        .setDescription('Filter by price tier')
+        .setRequired(false)
+        .addChoices(
+          { name: 'All Currencies', value: 'all' },
+          { name: 'Budget (0.1+ exalt)', value: 'budget' },
+          { name: 'Mid (1+ exalt)', value: 'mid' },
+          { name: 'Premium (10+ exalt)', value: 'premium' },
+          { name: 'Elite (100+ exalt)', value: 'elite' }
+        )
+    )
+    .addStringOption(option =>
+      option
         .setName('league')
         .setDescription('League name')
         .setRequired(false)
@@ -52,6 +65,7 @@ const command: Command = {
       logger.info(`[movers] Invoked by ${interaction.user.username} (${interaction.user.id}) in guild ${interaction.guild?.id || 'DM'}`);
 
       const type = interaction.options.getString('type') || 'all';
+      const tier = interaction.options.getString('tier') || 'all';
       let league = sanitizeInput(interaction.options.getString('league') || config.bot.defaultLeague);
       const limit = validatePaginationLimit(interaction.options.getInteger('limit') || PAGINATION.DEFAULT_MOVERS);
 
@@ -64,18 +78,18 @@ const command: Command = {
 
       league = normalizeLeagueName(league);
 
-      // Fetch Exalted Orb price for smart formatting
+      // Fetch Exalted Orb price for tier filtering
       let exaltedPrice: number | undefined;
       try {
         const exaltedData = await poeNinjaClient.getCurrency(league, 'Exalted Orb');
         exaltedPrice = exaltedData?.chaosEquivalent;
       } catch (error) {
-        logger.warn('Failed to fetch Exalted Orb price for smart formatting:', error);
-        // Continue without exalted price - will fall back to chaos formatting
+        logger.warn('Failed to fetch Exalted Orb price for tier filtering:', error);
+        // Continue without exalted price - tier filtering will be disabled
       }
 
-      // Calculate movers
-      const { gainers, losers } = await currencyAnalyzer.calculateMovers(league, limit);
+      // Calculate movers with tier filter
+      const { gainers, losers } = await currencyAnalyzer.calculateMovers(league, limit, tier, exaltedPrice);
 
       // Filter based on type
       let allMovers: MoverData[] = [];
@@ -128,7 +142,7 @@ const command: Command = {
           league,
           paginator.getPageIndicator(),
           startIndex,
-          exaltedPrice
+          tier
         );
 
         // Only show buttons if there's more than 1 page
@@ -212,7 +226,7 @@ const command: Command = {
             league,
             `${paginator.getPageIndicator()} • Buttons expired`,
             startIndex,
-            exaltedPrice
+            tier
           );
 
           await interaction.editReply({

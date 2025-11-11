@@ -132,13 +132,30 @@ export interface MarketTrends {
     currency: string;
     volume: number;
   };
-  mostValuable: {
-    currency: string;
-    price: number;
-  };
-  sentiment: 'bullish' | 'bearish' | 'neutral';
+  sentiment: 'very_bullish' | 'bullish' | 'neutral' | 'bearish' | 'very_bearish';
   averageChange24h: number;
   volatilityIndex: number;
+  marketBreadth: {
+    gainersPercent: number;
+    losersPercent: number;
+    unchangedPercent: number;
+  };
+  topMover: {
+    gainer: { currency: string; change: number };
+    loser: { currency: string; change: number };
+  };
+  keyCurrencies: {
+    divine: number;
+    exalted: number;
+    chaos: number;
+    divineToExaltedRatio: number;
+  };
+  totalLiquidity: number;
+  mostStable: {
+    currency: string;
+    volatility: number;
+  };
+  currenciesTracked: number;
   lastUpdated: string;
 }
 

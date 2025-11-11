@@ -59,6 +59,28 @@ export function formatSmartPrice(chaosPrice: number, exaltedPrice?: number): str
 }
 
 /**
+ * Format price for movers display - always shows chaos with extended decimals for cheap items
+ * This avoids the counterintuitive "per exalt" arrow direction issue
+ */
+export function formatMoversPrice(chaosPrice: number): string {
+  const chaosEmoji = getCurrencyEmoji('Chaos Orb');
+
+  // For items >= 0.01 chaos, use 2 decimals
+  if (chaosPrice >= 0.01) {
+    return `${formatPrice(chaosPrice, 2)}${chaosEmoji}`;
+  }
+
+  // For items < 0.01 chaos, use extended decimals
+  if (chaosPrice >= 0.0001) {
+    // Show 4 decimals (e.g., 0.0045c)
+    return `${chaosPrice.toFixed(4)}${chaosEmoji}`;
+  }
+
+  // For extremely cheap items, use scientific notation
+  return `${chaosPrice.toExponential(2)}${chaosEmoji}`;
+}
+
+/**
  * Format a percentage change with + or - prefix
  */
 export function formatPercentChange(change: number, decimals: number = 1): string {

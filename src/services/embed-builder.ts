@@ -8,7 +8,7 @@ import {
   getPriceChangeEmoji,
   getSentimentEmoji,
   formatPrice,
-  formatSmartPrice
+  formatMoversPrice
 } from '../utils/formatters';
 import { formatCurrencyWithEmoji } from '../utils/emoji-helper';
 import type {
@@ -176,20 +176,32 @@ export class EmbedBuilderService {
     league: string,
     pageIndicator?: string,
     startIndex: number = 0,
-    exaltedPrice?: number
+    tierFilter?: string
   ): EmbedBuilder {
+    // Build title with tier filter if applied
+    let title = `Market Movers - ${league}`;
+    if (tierFilter && tierFilter !== 'all') {
+      const tierNames: { [key: string]: string } = {
+        'budget': 'Budget (0.1+ ex)',
+        'mid': 'Mid (1+ ex)',
+        'premium': 'Premium (10+ ex)',
+        'elite': 'Elite (100+ ex)'
+      };
+      title += ` • ${tierNames[tierFilter] || tierFilter}`;
+    }
+
     const embed = new EmbedBuilder()
-      .setTitle(`🚀 Market Movers - ${league}`)
+      .setTitle(title)
       .setColor(EMBED_COLORS.INFO)
       .setTimestamp();
 
-    // Helper function to format movers
+    // Helper function to format movers using chaos-only formatting
     const formatMovers = (movers: MoverData[], offset: number): string => {
       return movers
         .map((m, i) => {
           const changeEmoji = getPriceChangeEmoji(m.changePercent);
           const currencyWithEmoji = formatCurrencyWithEmoji(m.currencyTypeName);
-          return `${offset + i + 1}. **${currencyWithEmoji}**: ${formatPercentChange(m.changePercent)} ${changeEmoji}\n   ${formatSmartPrice(m.previousPrice, exaltedPrice)} → ${formatSmartPrice(m.currentPrice, exaltedPrice)}`;
+          return `${offset + i + 1}. **${currencyWithEmoji}**: ${formatPercentChange(m.changePercent)} ${changeEmoji}\n   ${formatMoversPrice(m.previousPrice)} → ${formatMoversPrice(m.currentPrice)}`;
         })
         .join('\n\n');
     };
@@ -284,40 +296,73 @@ export class EmbedBuilderService {
   createTrendsEmbed(trends: MarketTrends): EmbedBuilder {
     const sentimentEmoji = getSentimentEmoji(trends.sentiment);
     const mostActiveCurrencyWithEmoji = formatCurrencyWithEmoji(trends.mostActive.currency);
-    const mostValuableCurrencyWithEmoji = formatCurrencyWithEmoji(trends.mostValuable.currency);
+    const topGainerWithEmoji = formatCurrencyWithEmoji(trends.topMover.gainer.currency);
+    const topLoserWithEmoji = formatCurrencyWithEmoji(trends.topMover.loser.currency);
+    const mostStableWithEmoji = formatCurrencyWithEmoji(trends.mostStable.currency);
+    const divineEmoji = formatCurrencyWithEmoji('Divine Orb');
+    const exaltedEmoji = formatCurrencyWithEmoji('Exalted Orb');
+
+    // Format sentiment name
+    const sentimentName = trends.sentiment
+      .split('_')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+
+    // Sentiment-based color coding with granularity
+    let embedColor: number;
+    switch (trends.sentiment) {
+      case 'very_bullish':
+        embedColor = 0x57F287; // Bright green
+        break;
+      case 'bullish':
+        embedColor = 0x77DD77; // Medium green
+        break;
+      case 'neutral':
+        embedColor = EMBED_COLORS.NEUTRAL; // Gray
+        break;
+      case 'bearish':
+        embedColor = 0xFF9999; // Light red
+        break;
+      case 'very_bearish':
+        embedColor = 0xED4245; // Bright red
+        break;
+      default:
+        embedColor = EMBED_COLORS.NEUTRAL;
+    }
 
     const embed = new EmbedBuilder()
       .setTitle(`📊 Market Trends - ${trends.league}`)
-      .setColor(
-        trends.sentiment === 'bullish' ? EMBED_COLORS.BULLISH :
-        trends.sentiment === 'bearish' ? EMBED_COLORS.BEARISH :
-        EMBED_COLORS.NEUTRAL
+      .setColor(embedColor)
+      .setDescription(
+        `Market Sentiment: ${sentimentEmoji} **${sentimentName}**\n` +
+        `Average 24h Change: **${formatPercentChange(trends.averageChange24h)}**\n` +
+        `Market Breadth: **${trends.marketBreadth.gainersPercent.toFixed(0)}% Up** | **${trends.marketBreadth.losersPercent.toFixed(0)}% Down**`
       )
       .addFields(
         {
-          name: '🔥 Most Active (24h)',
-          value: `**${mostActiveCurrencyWithEmoji}**\n${formatNumber(trends.mostActive.volume)} volume`,
-          inline: true
+          name: '─── Key Currencies ───',
+          value: `${divineEmoji} **${formatChaosPrice(trends.keyCurrencies.divine)}** | ${exaltedEmoji} **${formatChaosPrice(trends.keyCurrencies.exalted)}**\n` +
+                `Ratio: **1 Divine = ${trends.keyCurrencies.divineToExaltedRatio.toFixed(2)} Exalted**`,
+          inline: false
         },
         {
-          name: '💎 Most Valuable',
-          value: `**${mostValuableCurrencyWithEmoji}**\n${formatChaosPrice(trends.mostValuable.price)}`,
-          inline: true
+          name: '─── Market Leaders ───',
+          value: `🔥 **Most Active:** ${mostActiveCurrencyWithEmoji} (${formatNumber(trends.mostActive.volume)} listings)\n` +
+                `🔒 **Most Stable:** ${mostStableWithEmoji} (${trends.mostStable.volatility.toFixed(1)}% volatility)`,
+          inline: false
         },
         {
-          name: '\u200B',
-          value: '\u200B',
-          inline: true
+          name: '─── Quick Movers ───',
+          value: `🔝 **Top Gainer:** ${topGainerWithEmoji} **${formatPercentChange(trends.topMover.gainer.change)}**\n` +
+                `📉 **Top Loser:** ${topLoserWithEmoji} **${formatPercentChange(trends.topMover.loser.change)}**`,
+          inline: false
         },
         {
-          name: '📈 Market Sentiment',
-          value: `${sentimentEmoji} **${trends.sentiment.charAt(0).toUpperCase() + trends.sentiment.slice(1)}**\nAverage 24h change: ${formatPercentChange(trends.averageChange24h)}`,
-          inline: true
-        },
-        {
-          name: '⚡ Volatility Index',
-          value: `${trends.volatilityIndex.toFixed(1)}%\n(Market average)`,
-          inline: true
+          name: '─── Market Health ───',
+          value: `💧 **Total Liquidity:** ${formatNumber(trends.totalLiquidity)} listings\n` +
+                `⚡ **Volatility Index:** ${trends.volatilityIndex.toFixed(1)}% (Market average)\n` +
+                `📈 **Tracking:** ${formatNumber(trends.currenciesTracked)} currencies`,
+          inline: false
         }
       )
       .setTimestamp()
