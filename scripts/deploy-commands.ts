@@ -2,7 +2,7 @@ import { REST, Routes } from 'discord.js';
 import dotenv from 'dotenv';
 import { readdirSync } from 'fs';
 import { join } from 'path';
-import type { Command } from './src/models/command.interface';
+import type { Command } from '../src/models/command.interface';
 
 // Load environment variables
 dotenv.config();
@@ -12,7 +12,7 @@ dotenv.config();
  */
 async function loadCommands(): Promise<Command[]> {
   const commands: Command[] = [];
-  const commandsPath = join(__dirname, 'src', 'commands');
+  const commandsPath = join(__dirname, '..', 'src', 'commands');
 
   try {
     const commandFiles = readdirSync(commandsPath).filter(file => {

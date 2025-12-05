@@ -38,8 +38,11 @@ A Discord bot that provides real-time Path of Exile 2 economy information throug
 
 1. **Configure WSL Redis for Windows access**
 ```bash
-# Run the check script to verify Redis setup
-check-redis.bat
+# Run the check script to verify Redis setup (Windows)
+scripts\windows\check-redis.bat
+
+# Or on Linux
+scripts/linux/check-redis.sh
 
 # If Redis is not accessible from Windows, configure it:
 wsl bash -c "redis-cli -a 'YOUR_REDIS_PASSWORD' CONFIG SET bind '0.0.0.0'"
@@ -77,33 +80,62 @@ DEFAULT_LEAGUE=Rise of the Abyssal
 
 4. **Deploy Discord commands**
 ```bash
-deploy-commands.bat
+# Using npm (cross-platform)
+npm run deploy-commands
+
+# Or directly (Windows)
+scripts\windows\deploy-commands.bat
+
+# Or on Linux
+./scripts/linux/deploy-commands.sh
 ```
 
 5. **Start the bot**
 
 Development mode (recommended - auto-reload):
 ```bash
-dev.bat
+# Windows
+scripts\windows\dev.bat
+
+# Linux
+./scripts/linux/dev.sh
+
+# Or use npm
+npm run dev
 ```
 
 Production mode:
 ```bash
-start.bat
+# Windows
+scripts\windows\start.bat
+
+# Linux
+./scripts/linux/start.sh
+
+# Or use npm
+npm start
 ```
 
 ✅ **That's it!** The bot is now running and will show all logs directly in the console.
 
 ## Available Scripts
 
+### NPM Scripts (Cross-Platform)
 | Script | Purpose |
 |--------|---------|
-| `dev.bat` | Start bot in development mode (auto-reload, debug logs) |
-| `start.bat` | Build and start bot in production mode |
-| `clean-start.bat` | Kill old instances and start fresh (recommended) |
-| `kill-bots.bat` | Stop all Node.js processes |
-| `deploy-commands.bat` | Register slash commands with Discord |
-| `check-redis.bat` | Verify Redis connection and configuration |
+| `npm run dev` | Start bot in development mode (auto-reload, debug logs) |
+| `npm start` | Start bot in production mode |
+| `npm run build` | Compile TypeScript to JavaScript |
+| `npm run deploy-commands` | Register slash commands with Discord |
+| `npm run clear-commands` | Clear all Discord commands |
+
+### Platform-Specific Scripts
+| Windows | Linux | Purpose |
+|---------|-------|---------|
+| `scripts\windows\dev.bat` | `scripts/linux/dev.sh` | Start in development mode |
+| `scripts\windows\start.bat` | `scripts/linux/start.sh` | Start in production mode |
+| `scripts\windows\cleanup.bat` | `scripts/linux/cleanup.sh` | Stop all Node.js processes |
+| `scripts\windows\check-redis.bat` | - | Verify Redis connection |
 
 ## Discord Bot Setup
 
@@ -123,7 +155,7 @@ start.bat
 
 ```
 poe2-discord-bot/
-├── src/
+├── src/                   # Source code
 │   ├── commands/          # Slash command implementations
 │   ├── config/            # Configuration and constants
 │   ├── events/            # Discord event handlers
@@ -132,10 +164,13 @@ poe2-discord-bot/
 │   ├── utils/             # Utility functions
 │   ├── bot.ts             # Discord client setup
 │   └── index.ts           # Entry point
-├── deploy-commands.ts     # Command deployment script
-├── check-redis.bat        # Redis diagnostic tool
-├── dev.bat                # Development start script
-├── start.bat              # Production start script
+├── scripts/               # Build & deployment scripts
+│   ├── deploy-commands.ts # Command deployment script
+│   ├── clear-commands.ts  # Command removal script
+│   ├── windows/           # Windows batch files
+│   └── linux/             # Linux shell scripts
+├── docs/                  # Documentation
+├── tools/                 # Development utilities
 └── package.json
 ```
 
@@ -214,7 +249,7 @@ Use this IP in your `.env` file for `REDIS_HOST`.
 **Problem:** Can't connect to Redis from Windows.
 
 **Solution:**
-1. Run `check-redis.bat` to diagnose
+1. Run `scripts\windows\check-redis.bat` to diagnose (Windows only)
 2. Ensure Redis is bound to `0.0.0.0` (see WSL Redis Setup above)
 3. Verify WSL IP hasn't changed: `wsl hostname -I`
 4. Update `REDIS_HOST` in `.env` if IP changed
@@ -250,15 +285,17 @@ wsl bash -c "redis-cli -a 'YOUR_PASSWORD' --no-auth-warning ping"
 **Solution:**
 Multiple bot instances are running. Kill all and restart:
 ```bash
-kill-bots.bat
-# Then start fresh with:
-clean-start.bat
+# Windows
+scripts\windows\cleanup.bat
+
+# Linux
+./scripts/linux/cleanup.sh
 ```
 
 **Prevention:**
 - Always use **Ctrl+C** to stop the bot properly
-- Use `clean-start.bat` instead of `dev.bat` if you're unsure
-- Check Task Manager for zombie `node.exe` processes
+- Use cleanup scripts before starting if unsure
+- Check Task Manager (Windows) or `ps aux | grep node` (Linux) for zombie processes
 
 ## Features Roadmap
 
@@ -291,7 +328,7 @@ Data is cached in Redis with 5-minute refresh intervals.
 ## Deployment
 
 For production deployment, you can use:
-- **VPS/Dedicated Server**: Run `start.bat` with a process manager like PM2
+- **VPS/Dedicated Server**: Run `npm start` with a process manager like PM2
 - **Cloud Platforms**: Heroku, Railway, Render (all support Node.js + Redis)
 - **Keep-alive**: Use a service like UptimeRobot to prevent sleep
 
