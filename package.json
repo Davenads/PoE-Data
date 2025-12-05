@@ -7,8 +7,8 @@
     "dev": "nodemon --exec ts-node src/index.ts",
     "build": "tsc",
     "start": "node dist/index.js",
-    "deploy-commands": "ts-node deploy-commands.ts",
-    "clear-commands": "ts-node clear-commands.ts",
+    "deploy-commands": "ts-node scripts/deploy-commands.ts",
+    "clear-commands": "ts-node scripts/clear-commands.ts",
     "redeploy-commands": "npm run clear-commands && npm run deploy-commands"
   },
   "keywords": [

@@ -57,13 +57,3 @@ scripts/linux/*.sh
 # Workspace files
 *.code-workspace
 
-
-# Migration backup directories
-.migration-backup-*/
-
-# Scripts (platform-specific local scripts)
-scripts/linux/*.sh
-
-# Workspace files
-*.code-workspace
-

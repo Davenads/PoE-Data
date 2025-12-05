@@ -11,7 +11,11 @@
       "Bash(npm run build:*)",
       "Bash(curl:*)",
       "WebFetch(domain:poe.ninja)",
-      "Bash(cmd /c \"taskkill /F /IM node.exe /T >nul 2>&1\")"
+      "Bash(cmd /c \"taskkill /F /IM node.exe /T >nul 2>&1\")",
+      "Bash(ls:*)",
+      "Bash(chmod:*)",
+      "Bash(./run-migration.sh:*)",
+      "Bash(tree:*)"
     ],
     "deny": [],
     "ask": []
