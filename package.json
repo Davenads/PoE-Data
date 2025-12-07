@@ -7,6 +7,7 @@
     "dev": "nodemon --exec ts-node src/index.ts",
     "build": "tsc",
     "start": "node dist/index.js",
+    "heroku-postbuild": "npm run build",
     "deploy-commands": "ts-node scripts/deploy-commands.ts",
     "clear-commands": "ts-node scripts/clear-commands.ts",
     "redeploy-commands": "npm run clear-commands && npm run deploy-commands"
@@ -22,19 +23,19 @@
   "license": "MIT",
   "dependencies": {
     "@types/node": "^20.11.5",
+    "@types/node-cron": "^3.0.11",
     "axios": "^1.6.7",
     "discord.js": "^14.14.1",
     "dotenv": "^16.4.1",
     "ioredis": "^5.3.2",
     "node-cron": "^4.2.1",
     "puppeteer": "^22.0.0",
+    "typescript": "^5.3.3",
     "winston": "^3.11.0"
   },
   "devDependencies": {
-    "@types/node-cron": "^3.0.11",
     "nodemon": "^3.0.3",
-    "ts-node": "^10.9.2",
-    "typescript": "^5.3.3"
+    "ts-node": "^10.9.2"
   },
   "engines": {
     "node": ">=18.0.0"
