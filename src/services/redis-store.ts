@@ -9,8 +9,11 @@ import { CACHE_TTL } from '../config/constants';
 export class RedisDataStore {
   public client: Redis;
   private connected: boolean = false;
+  private keyPrefix: string;
 
   constructor() {
+    this.keyPrefix = config.redis.keyPrefix;
+
     this.client = new Redis({
       host: config.redis.host,
       port: config.redis.port,
@@ -23,6 +26,13 @@ export class RedisDataStore {
     });
 
     this.setupEventHandlers();
+  }
+
+  /**
+   * Add prefix to key
+   */
+  private prefixKey(key: string): string {
+    return `${this.keyPrefix}${key}`;
   }
 
   private setupEventHandlers(): void {
@@ -74,7 +84,7 @@ export class RedisDataStore {
    */
   async get<T>(key: string): Promise<T | null> {
     try {
-      const data = await this.client.get(key);
+      const data = await this.client.get(this.prefixKey(key));
       if (!data) return null;
 
       const parsed = JSON.parse(data);
@@ -93,9 +103,9 @@ export class RedisDataStore {
       const serialized = JSON.stringify(value);
 
       if (ttlSeconds) {
-        await this.client.setex(key, ttlSeconds, serialized);
+        await this.client.setex(this.prefixKey(key), ttlSeconds, serialized);
       } else {
-        await this.client.set(key, serialized);
+        await this.client.set(this.prefixKey(key), serialized);
       }
     } catch (error) {
       logger.error(`Error setting key ${key}:`, error);
@@ -108,7 +118,7 @@ export class RedisDataStore {
    */
   async del(key: string): Promise<void> {
     try {
-      await this.client.del(key);
+      await this.client.del(this.prefixKey(key));
     } catch (error) {
       logger.error(`Error deleting key ${key}:`, error);
     }
@@ -119,7 +129,7 @@ export class RedisDataStore {
    */
   async exists(key: string): Promise<boolean> {
     try {
-      const result = await this.client.exists(key);
+      const result = await this.client.exists(this.prefixKey(key));
       return result === 1;
     } catch (error) {
       logger.error(`Error checking existence of key ${key}:`, error);
@@ -132,7 +142,9 @@ export class RedisDataStore {
    */
   async keys(pattern: string): Promise<string[]> {
     try {
-      return await this.client.keys(pattern);
+      const keys = await this.client.keys(this.prefixKey(pattern));
+      // Strip prefix from returned keys for consistency
+      return keys.map(key => key.substring(this.keyPrefix.length));
     } catch (error) {
       logger.error(`Error getting keys with pattern ${pattern}:`, error);
       return [];
@@ -144,7 +156,7 @@ export class RedisDataStore {
    */
   async addToStream(streamKey: string, fields: Record<string, string>): Promise<void> {
     try {
-      await this.client.xadd(streamKey, '*', ...Object.entries(fields).flat());
+      await this.client.xadd(this.prefixKey(streamKey), '*', ...Object.entries(fields).flat());
     } catch (error) {
       logger.error(`Error adding to stream ${streamKey}:`, error);
     }
@@ -155,7 +167,7 @@ export class RedisDataStore {
    */
   async getStreamEntries(streamKey: string, count: number = 100): Promise<any[]> {
     try {
-      const results = await this.client.xrevrange(streamKey, '+', '-', 'COUNT', count);
+      const results = await this.client.xrevrange(this.prefixKey(streamKey), '+', '-', 'COUNT', count);
       return results.map(([id, fields]) => {
         const obj: any = { id };
         for (let i = 0; i < fields.length; i += 2) {
@@ -174,7 +186,7 @@ export class RedisDataStore {
    */
   async trimStream(streamKey: string, maxLength: number): Promise<void> {
     try {
-      await this.client.xtrim(streamKey, 'MAXLEN', '~', maxLength);
+      await this.client.xtrim(this.prefixKey(streamKey), 'MAXLEN', '~', maxLength);
     } catch (error) {
       logger.error(`Error trimming stream ${streamKey}:`, error);
     }

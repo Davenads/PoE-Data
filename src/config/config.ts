@@ -14,6 +14,7 @@ interface Config {
     host: string;
     port: number;
     password?: string;
+    keyPrefix: string;
   };
   bot: {
     defaultLeague: string;
@@ -60,7 +61,8 @@ export const config: Config = {
   redis: {
     host: process.env.REDIS_HOST || 'localhost',
     port: parseInt(process.env.REDIS_PORT || '6379', 10),
-    password: process.env.REDIS_PASSWORD
+    password: process.env.REDIS_PASSWORD,
+    keyPrefix: process.env.REDIS_KEY_PREFIX || 'pb:'
   },
   bot: {
     defaultLeague: process.env.DEFAULT_LEAGUE || 'Rise of the Abyssal',
