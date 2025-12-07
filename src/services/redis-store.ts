@@ -226,8 +226,9 @@ export class RedisDataStore {
 
     await this.addToStream(streamKey, fields);
 
-    // Trim to keep only last 30 days (approximately 8640 entries at 5-minute intervals)
-    await this.trimStream(streamKey, 10000);
+    // Trim to keep only last ~3.5 days (1000 entries at 5-minute intervals)
+    // Optimized for free-tier Redis (25-30MB limit)
+    await this.trimStream(streamKey, 1000);
   }
 
   /**

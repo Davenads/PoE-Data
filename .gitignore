@@ -2,6 +2,7 @@
 /debug-screenshots
 /.claude
 message-to-poeninja-dev.md
+REDIS-OPTIMIZATION.md
 
 # Dependencies
 node_modules/
@@ -67,3 +68,5 @@ scripts/linux/*.sh
 # Workspace files
 *.code-workspace
 
+# DEBUG SCREENSHOTS
+/debug-ss
